@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jchotel.mapper.MaintenanceOrderMapper">
+
+    <resultMap id="MaintenanceOrderMap" type="com.jchotel.entity.MaintenanceOrder">
+        <id property="id" column="id"/>
+        <result property="orderNo" column="order_no"/>
+        <result property="roomId" column="room_id"/>
+        <result property="roomNo" column="room_no"/>
+        <result property="title" column="title"/>
+        <result property="description" column="description"/>
+        <result property="category" column="category"/>
+        <result property="priority" column="priority"/>
+        <result property="reporterId" column="reporter_id"/>
+        <result property="reporterName" column="reporter_name"/>
+        <result property="assigneeId" column="assignee_id"/>
+        <result property="assigneeName" column="assignee_name"/>
+        <result property="status" column="status"/>
+        <result property="solution" column="solution"/>
+        <result property="cost" column="cost"/>
+        <result property="finishTime" column="finish_time"/>
+        <result property="verifyTime" column="verify_time"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <select id="findList" resultMap="MaintenanceOrderMap">
+        SELECT mo.*, r.room_no, u1.real_name as reporter_name, u2.real_name as assignee_name
+        FROM t_maintenance_order mo
+        LEFT JOIN t_room r ON mo.room_id = r.id
+        LEFT JOIN sys_user u1 ON mo.reporter_id = u1.id
+        LEFT JOIN sys_user u2 ON mo.assignee_id = u2.id
+        <where>
+            <if test="status != null and status != ''">
+                AND mo.status = #{status}
+            </if>
+            <if test="roomNo != null and roomNo != ''">
+                AND mo.room_no = #{roomNo}
+            </if>
+            <if test="assigneeId != null">
+                AND mo.assignee_id = #{assigneeId}
+            </if>
+            <if test="priority != null and priority != ''">
+                AND mo.priority = #{priority}
+            </if>
+            <if test="category != null and category != ''">
+                AND mo.category = #{category}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (mo.room_no LIKE CONCAT('%', #{keyword}, '%') OR mo.title LIKE CONCAT('%', #{keyword}, '%')
+                     OR mo.order_no LIKE CONCAT('%', #{keyword}, '%') OR mo.description LIKE CONCAT('%', #{keyword}, '%')
+                     OR u1.real_name LIKE CONCAT('%', #{keyword}, '%') OR u2.real_name LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+        </where>
+        ORDER BY mo.create_time DESC
+        LIMIT #{offset}, #{size}
+    </select>
+
+    <select id="count" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM t_maintenance_order mo
+        LEFT JOIN t_room r ON mo.room_id = r.id
+        LEFT JOIN sys_user u1 ON mo.reporter_id = u1.id
+        LEFT JOIN sys_user u2 ON mo.assignee_id = u2.id
+        <where>
+            <if test="status != null and status != ''">
+                AND mo.status = #{status}
+            </if>
+            <if test="roomNo != null and roomNo != ''">
+                AND mo.room_no = #{roomNo}
+            </if>
+            <if test="assigneeId != null">
+                AND mo.assignee_id = #{assigneeId}
+            </if>
+            <if test="priority != null and priority != ''">
+                AND mo.priority = #{priority}
+            </if>
+            <if test="category != null and category != ''">
+                AND mo.category = #{category}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (mo.room_no LIKE CONCAT('%', #{keyword}, '%') OR mo.title LIKE CONCAT('%', #{keyword}, '%')
+                     OR mo.order_no LIKE CONCAT('%', #{keyword}, '%') OR mo.description LIKE CONCAT('%', #{keyword}, '%')
+                     OR u1.real_name LIKE CONCAT('%', #{keyword}, '%') OR u2.real_name LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+        </where>
+    </select>
+
+    <update id="update">
+        UPDATE t_maintenance_order
+        <set>
+            <if test="roomId != null">room_id = #{roomId},</if>
+            <if test="roomNo != null">room_no = #{roomNo},</if>
+            <if test="title != null">title = #{title},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="category != null">category = #{category},</if>
+            <if test="priority != null">priority = #{priority},</if>
+            <if test="assigneeId != null">assignee_id = #{assigneeId},</if>
+            <if test="assigneeName != null">assignee_name = #{assigneeName},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="solution != null">solution = #{solution},</if>
+            <if test="cost != null">cost = #{cost},</if>
+            <if test="finishTime != null">finish_time = #{finishTime},</if>
+            <if test="verifyTime != null">verify_time = #{verifyTime}</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+</mapper>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="270" viewBox="0 0 640 270">
+  <rect width="640" height="270" fill="white"/>
+  
+    <circle cx="50" cy="80" r="13" fill="white" stroke="#333" stroke-width="1.8"/>
+    <line x1="50" y1="93" x2="50" y2="133" stroke="#333" stroke-width="1.8"/>
+    <line x1="50" y1="109" x2="28" y2="91" stroke="#333" stroke-width="1.8"/>
+    <line x1="50" y1="109" x2="72" y2="91" stroke="#333" stroke-width="1.8"/>
+    <line x1="50" y1="133" x2="34" y2="155" stroke="#333" stroke-width="1.8"/>
+    <line x1="50" y1="133" x2="66" y2="155" stroke="#333" stroke-width="1.8"/>
+    <text x="50" y="171" text-anchor="middle" font-size="14" fill="#333" font-family="sans-serif">系统用户</text>
+  <line x1="64" y1="135" x2="51.5" y2="65" stroke="#333" stroke-width="1.8"/>
+  
+    <ellipse cx="130" cy="65" rx="78.5" ry="26" fill="white" stroke="#333" stroke-width="1.5"/>
+    <text x="130" y="69" text-anchor="middle" font-size="12" fill="#333" font-family="sans-serif">按姓名/手机号搜索</text>
+  <line x1="64" y1="135" x2="225" y2="65" stroke="#333" stroke-width="1.8"/>
+  
+    <ellipse cx="300" cy="65" rx="75" ry="26" fill="white" stroke="#333" stroke-width="1.5"/>
+    <text x="300" y="69" text-anchor="middle" font-size="12" fill="#333" font-family="sans-serif">按VIP等级筛选</text>
+  <line x1="64" y1="135" x2="395" y2="65" stroke="#333" stroke-width="1.8"/>
+  
+    <ellipse cx="470" cy="65" rx="75" ry="26" fill="white" stroke="#333" stroke-width="1.5"/>
+    <text x="470" y="69" text-anchor="middle" font-size="12" fill="#333" font-family="sans-serif">查看客户列表</text>
+  <line x1="64" y1="135" x2="55" y2="140" stroke="#333" stroke-width="1.8"/>
+  
+    <ellipse cx="130" cy="140" rx="75" ry="26" fill="white" stroke="#333" stroke-width="1.5"/>
+    <text x="130" y="144" text-anchor="middle" font-size="12" fill="#333" font-family="sans-serif">新增客户</text>
+  <line x1="64" y1="135" x2="225" y2="140" stroke="#333" stroke-width="1.8"/>
+  
+    <ellipse cx="300" cy="140" rx="75" ry="26" fill="white" stroke="#333" stroke-width="1.5"/>
+    <text x="300" y="144" text-anchor="middle" font-size="12" fill="#333" font-family="sans-serif">编辑客户</text>
+  <line x1="64" y1="135" x2="395" y2="140" stroke="#333" stroke-width="1.8"/>
+  
+    <ellipse cx="470" cy="140" rx="75" ry="26" fill="white" stroke="#333" stroke-width="1.5"/>
+    <text x="470" y="144" text-anchor="middle" font-size="12" fill="#333" font-family="sans-serif">删除客户</text>
+</svg>

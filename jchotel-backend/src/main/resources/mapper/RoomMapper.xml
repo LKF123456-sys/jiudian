@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jchotel.mapper.RoomMapper">
+
+    <resultMap id="RoomMap" type="com.jchotel.entity.Room">
+        <id property="id" column="id"/>
+        <result property="roomNo" column="room_no"/>
+        <result property="typeId" column="type_id"/>
+        <result property="typeName" column="type_name"/>
+        <result property="floor" column="floor"/>
+        <result property="price" column="price"/>
+        <result property="status" column="status"/>
+        <result property="remark" column="remark"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <select id="findList" resultMap="RoomMap">
+        SELECT r.*, t.name as type_name
+        FROM t_room r
+        LEFT JOIN t_room_type t ON r.type_id = t.id
+        <where>
+            <if test="status != null and status != ''">
+                AND r.status = #{status}
+            </if>
+            <if test="typeId != null">
+                AND r.type_id = #{typeId}
+            </if>
+            <if test="floor != null">
+                AND r.floor = #{floor}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND r.room_no LIKE CONCAT('%', #{keyword}, '%')
+            </if>
+        </where>
+        ORDER BY r.room_no
+        LIMIT #{offset}, #{size}
+    </select>
+
+    <select id="count" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM t_room r
+        <where>
+            <if test="status != null and status != ''">
+                AND r.status = #{status}
+            </if>
+            <if test="typeId != null">
+                AND r.type_id = #{typeId}
+            </if>
+            <if test="floor != null">
+                AND r.floor = #{floor}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND r.room_no LIKE CONCAT('%', #{keyword}, '%')
+            </if>
+        </where>
+    </select>
+
+    <update id="update">
+        UPDATE t_room
+        <set>
+            <if test="roomNo != null">room_no = #{roomNo},</if>
+            <if test="typeId != null">type_id = #{typeId},</if>
+            <if test="floor != null">floor = #{floor},</if>
+            <if test="price != null">price = #{price},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="remark != null">remark = #{remark}</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="findAll" resultMap="RoomMap">
+        SELECT r.*, t.name as type_name
+        FROM t_room r
+        LEFT JOIN t_room_type t ON r.type_id = t.id
+        ORDER BY r.floor, r.room_no
+    </select>
+
+    <select id="findByFloor" resultMap="RoomMap">
+        SELECT r.*, t.name as type_name
+        FROM t_room r
+        LEFT JOIN t_room_type t ON r.type_id = t.id
+        WHERE r.floor = #{floor}
+        ORDER BY r.room_no
+    </select>
+
+    <select id="findAvailableRooms" resultMap="RoomMap">
+        SELECT r.*, t.name as type_name
+        FROM t_room r
+        LEFT JOIN t_room_type t ON r.type_id = t.id
+        WHERE r.status = 'idle'
+        <if test="typeId != null">
+            AND r.type_id = #{typeId}
+        </if>
+        AND r.id NOT IN (
+            SELECT o.room_id FROM t_order o
+            WHERE o.status IN ('pending', 'checkedIn')
+              AND o.check_in_time &lt; #{endTime}
+              AND o.expected_check_out_time &gt; #{startTime}
+        )
+        ORDER BY r.floor, r.room_no
+    </select>
+
+    <select id="findRoomsWithStats" resultMap="RoomMap">
+        SELECT r.*, t.name as type_name
+        FROM t_room r
+        LEFT JOIN t_room_type t ON r.type_id = t.id
+        ORDER BY r.floor, r.room_no
+    </select>
+</mapper>

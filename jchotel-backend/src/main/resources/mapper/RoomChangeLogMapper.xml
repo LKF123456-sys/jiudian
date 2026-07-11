@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jchotel.mapper.RoomChangeLogMapper">
+
+    <resultMap id="RoomChangeLogMap" type="com.jchotel.entity.RoomChangeLog">
+        <id property="id" column="id"/>
+        <result property="orderId" column="order_id"/>
+        <result property="orderNo" column="order_no"/>
+        <result property="fromRoomId" column="from_room_id"/>
+        <result property="fromRoomNo" column="from_room_no"/>
+        <result property="toRoomId" column="to_room_id"/>
+        <result property="toRoomNo" column="to_room_no"/>
+        <result property="reason" column="reason"/>
+        <result property="priceDiff" column="price_diff"/>
+        <result property="operatorId" column="operator_id"/>
+        <result property="operatorName" column="operator_name"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <select id="findByOrderId" resultMap="RoomChangeLogMap">
+        SELECT rcl.*, r1.room_no as from_room_no, r2.room_no as to_room_no, u.real_name as operator_name
+        FROM t_room_change_log rcl
+        LEFT JOIN t_room r1 ON rcl.from_room_id = r1.id
+        LEFT JOIN t_room r2 ON rcl.to_room_id = r2.id
+        LEFT JOIN sys_user u ON rcl.operator_id = u.id
+        WHERE rcl.order_id = #{orderId}
+        ORDER BY rcl.create_time ASC
+    </select>
+
+</mapper>

@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jchotel.mapper.OrderMapper">
+
+    <resultMap id="OrderMap" type="com.jchotel.entity.Order">
+        <id property="id" column="id"/>
+        <result property="orderNo" column="order_no"/>
+        <result property="customerId" column="customer_id"/>
+        <result property="customerName" column="customer_name"/>
+        <result property="customerPhone" column="customer_phone"/>
+        <result property="roomId" column="room_id"/>
+        <result property="roomNo" column="room_no"/>
+        <result property="roomTypeName" column="room_type_name"/>
+        <result property="userId" column="user_id"/>
+        <result property="userName" column="user_name"/>
+        <result property="checkInTime" column="check_in_time"/>
+        <result property="expectedCheckOutTime" column="expected_check_out_time"/>
+        <result property="actualCheckOutTime" column="actual_check_out_time"/>
+        <result property="deposit" column="deposit"/>
+        <result property="depositRefunded" column="deposit_refunded"/>
+        <result property="roomAmount" column="room_amount"/>
+        <result property="extraAmount" column="extra_amount"/>
+        <result property="totalAmount" column="total_amount"/>
+        <result property="roomChanged" column="room_changed"/>
+        <result property="originalRoomId" column="original_room_id"/>
+        <result property="parentOrderId" column="parent_order_id"/>
+        <result property="channel" column="channel"/>
+        <result property="status" column="status"/>
+        <result property="remark" column="remark"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <select id="findList" resultMap="OrderMap">
+        SELECT o.*, c.name as customer_name, c.phone as customer_phone, r.room_no, rt.name as room_type_name, u.real_name as user_name
+        FROM t_order o
+        LEFT JOIN t_customer c ON o.customer_id = c.id
+        LEFT JOIN t_room r ON o.room_id = r.id
+        LEFT JOIN t_room_type rt ON r.type_id = rt.id
+        LEFT JOIN sys_user u ON o.user_id = u.id
+        <where>
+            <if test="status != null and status != ''">
+                AND o.status = #{status}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (c.name LIKE CONCAT('%', #{keyword}, '%') OR r.room_no LIKE CONCAT('%', #{keyword}, '%')
+                     OR o.order_no LIKE CONCAT('%', #{keyword}, '%') OR c.phone LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="startTime != null and startTime != ''">
+                AND o.check_in_time &gt;= #{startTime}
+            </if>
+            <if test="endTime != null and endTime != ''">
+                AND o.check_in_time &lt;= #{endTime}
+            </if>
+        </where>
+        ORDER BY o.create_time DESC
+        LIMIT #{offset}, #{size}
+    </select>
+
+    <select id="count" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM t_order o
+        LEFT JOIN t_customer c ON o.customer_id = c.id
+        LEFT JOIN t_room r ON o.room_id = r.id
+        <where>
+            <if test="status != null and status != ''">
+                AND o.status = #{status}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (c.name LIKE CONCAT('%', #{keyword}, '%') OR r.room_no LIKE CONCAT('%', #{keyword}, '%')
+                     OR o.order_no LIKE CONCAT('%', #{keyword}, '%') OR c.phone LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="startTime != null and startTime != ''">
+                AND o.check_in_time &gt;= #{startTime}
+            </if>
+            <if test="endTime != null and endTime != ''">
+                AND o.check_in_time &lt;= #{endTime}
+            </if>
+        </where>
+    </select>
+
+    <update id="update">
+        UPDATE t_order
+        <set>
+            <if test="orderNo != null">order_no = #{orderNo},</if>
+            <if test="customerId != null">customer_id = #{customerId},</if>
+            <if test="roomId != null">room_id = #{roomId},</if>
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="checkInTime != null">check_in_time = #{checkInTime},</if>
+            <if test="expectedCheckOutTime != null">expected_check_out_time = #{expectedCheckOutTime},</if>
+            <if test="actualCheckOutTime != null">actual_check_out_time = #{actualCheckOutTime},</if>
+            <if test="deposit != null">deposit = #{deposit},</if>
+            <if test="depositRefunded != null">deposit_refunded = #{depositRefunded},</if>
+            <if test="roomAmount != null">room_amount = #{roomAmount},</if>
+            <if test="extraAmount != null">extra_amount = #{extraAmount},</if>
+            <if test="totalAmount != null">total_amount = #{totalAmount},</if>
+            <if test="roomChanged != null">room_changed = #{roomChanged},</if>
+            <if test="originalRoomId != null">original_room_id = #{originalRoomId},</if>
+            <if test="parentOrderId != null">parent_order_id = #{parentOrderId},</if>
+            <if test="channel != null">channel = #{channel},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="remark != null">remark = #{remark}</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="statsByDateRange" resultType="java.util.HashMap">
+        SELECT DATE(actual_check_out_time) as date, IFNULL(SUM(room_amount), 0) as roomAmount,
+               IFNULL(SUM(extra_amount), 0) as extraAmount, IFNULL(SUM(total_amount), 0) as amount, COUNT(*) as count
+        FROM t_order
+        WHERE status = 'checkedOut'
+        AND actual_check_out_time &gt;= #{startTime}
+        AND actual_check_out_time &lt; #{endTime}
+        GROUP BY DATE(actual_check_out_time)
+        ORDER BY date ASC
+    </select>
+
+    <select id="findAvailableRooms" resultType="com.jchotel.entity.Room">
+        SELECT r.*, rt.name AS type_name, r.price
+        FROM t_room r
+        LEFT JOIN t_room_type rt ON r.type_id = rt.id
+        WHERE r.status = 'idle'
+        AND r.id NOT IN (
+            SELECT o.room_id FROM t_order o
+            WHERE o.status IN ('pending', 'checkedIn')
+            AND o.check_in_time &lt; #{expectedCheckOutTime}
+            AND o.expected_check_out_time &gt; #{checkInTime}
+        )
+        ORDER BY r.floor, r.room_no
+    </select>
+
+    <select id="findOverdueCheckouts" resultMap="OrderMap">
+        SELECT o.*, c.name as customer_name, c.phone as customer_phone, r.room_no, rt.name as room_type_name
+        FROM t_order o
+        LEFT JOIN t_customer c ON o.customer_id = c.id
+        LEFT JOIN t_room r ON o.room_id = r.id
+        LEFT JOIN t_room_type rt ON r.type_id = rt.id
+        WHERE o.status = 'checkedIn' AND o.expected_check_out_time &lt; NOW()
+        ORDER BY o.expected_check_out_time ASC
+        LIMIT #{page}, #{size}
+    </select>
+
+    <select id="countOverdueCheckouts" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM t_order
+        WHERE status = 'checkedIn' AND expected_check_out_time &lt; NOW()
+    </select>
+
+    <select id="findTodayArrivals" resultMap="OrderMap">
+        SELECT o.*, c.name as customer_name, c.phone as customer_phone, r.room_no, rt.name as room_type_name
+        FROM t_order o
+        LEFT JOIN t_customer c ON o.customer_id = c.id
+        LEFT JOIN t_room r ON o.room_id = r.id
+        LEFT JOIN t_room_type rt ON r.type_id = rt.id
+        WHERE o.status = 'pending' AND DATE(o.check_in_time) = CURDATE()
+        ORDER BY o.check_in_time ASC
+    </select>
+
+    <select id="findTodayDepartures" resultMap="OrderMap">
+        SELECT o.*, c.name as customer_name, c.phone as customer_phone, r.room_no, rt.name as room_type_name
+        FROM t_order o
+        LEFT JOIN t_customer c ON o.customer_id = c.id
+        LEFT JOIN t_room r ON o.room_id = r.id
+        LEFT JOIN t_room_type rt ON r.type_id = rt.id
+        WHERE o.status = 'checkedIn' AND DATE(o.expected_check_out_time) = CURDATE()
+        ORDER BY o.expected_check_out_time ASC
+    </select>
+
+    <select id="findByCustomerId" resultMap="OrderMap">
+        SELECT o.*, c.name as customer_name, r.room_no, rt.name as room_type_name
+        FROM t_order o
+        LEFT JOIN t_customer c ON o.customer_id = c.id
+        LEFT JOIN t_room r ON o.room_id = r.id
+        LEFT JOIN t_room_type rt ON r.type_id = rt.id
+        WHERE o.customer_id = #{customerId}
+        ORDER BY o.create_time DESC
+    </select>
+
+    <select id="findLowDepositOrders" resultMap="OrderMap">
+        SELECT o.*, c.name as customer_name, c.phone as customer_phone, r.room_no
+        FROM t_order o
+        LEFT JOIN t_customer c ON o.customer_id = c.id
+        LEFT JOIN t_room r ON o.room_id = r.id
+        WHERE o.status = 'checkedIn' AND o.deposit &lt; o.total_amount
+        AND o.actual_check_out_time IS NULL
+        ORDER BY o.create_time ASC
+    </select>
+</mapper>

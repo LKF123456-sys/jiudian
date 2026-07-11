@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jchotel.mapper.CustomerMapper">
+
+    <resultMap id="CustomerMap" type="com.jchotel.entity.Customer">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="phone" column="phone"/>
+        <result property="idCard" column="id_card"/>
+        <result property="gender" column="gender"/>
+        <result property="vipLevel" column="vip_level"/>
+        <result property="tags" column="tags"/>
+        <result property="isBlacklist" column="is_blacklist"/>
+        <result property="blacklistReason" column="blacklist_reason"/>
+        <result property="birthday" column="birthday"/>
+        <result property="totalSpent" column="total_spent"/>
+        <result property="lastStayTime" column="last_stay_time"/>
+        <result property="remark" column="remark"/>
+        <result property="checkInCount" column="check_in_count"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <select id="findList" resultMap="CustomerMap">
+        SELECT * FROM t_customer
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (name LIKE CONCAT('%', #{keyword}, '%') OR phone LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="vipLevel != null">
+                AND vip_level = #{vipLevel}
+            </if>
+            <if test="isBlacklist != null">
+                AND is_blacklist = #{isBlacklist}
+            </if>
+        </where>
+        ORDER BY id DESC
+        LIMIT #{offset}, #{size}
+    </select>
+
+    <select id="count" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM t_customer
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (name LIKE CONCAT('%', #{keyword}, '%') OR phone LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="vipLevel != null">
+                AND vip_level = #{vipLevel}
+            </if>
+            <if test="isBlacklist != null">
+                AND is_blacklist = #{isBlacklist}
+            </if>
+        </where>
+    </select>
+
+    <update id="update">
+        UPDATE t_customer
+        <set>
+            <if test="name != null">name = #{name},</if>
+            <if test="phone != null">phone = #{phone},</if>
+            <if test="idCard != null">id_card = #{idCard},</if>
+            <if test="gender != null">gender = #{gender},</if>
+            <if test="vipLevel != null">vip_level = #{vipLevel},</if>
+            <if test="tags != null">tags = #{tags},</if>
+            <if test="isBlacklist != null">is_blacklist = #{isBlacklist},</if>
+            <if test="blacklistReason != null">blacklist_reason = #{blacklistReason},</if>
+            <if test="birthday != null">birthday = #{birthday},</if>
+            <if test="totalSpent != null">total_spent = #{totalSpent},</if>
+            <if test="lastStayTime != null">last_stay_time = #{lastStayTime},</if>
+            <if test="remark != null">remark = #{remark}</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="findBirthdayCustomers" resultMap="CustomerMap">
+        SELECT * FROM t_customer
+        WHERE birthday IS NOT NULL
+          AND is_blacklist = 0
+          AND MONTH(birthday) = MONTH(#{today})
+          AND DAY(birthday) = DAY(#{today})
+    </select>
+</mapper>

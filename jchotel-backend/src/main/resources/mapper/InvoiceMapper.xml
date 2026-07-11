@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jchotel.mapper.InvoiceMapper">
+
+    <resultMap id="InvoiceMap" type="com.jchotel.entity.Invoice">
+        <id property="id" column="id"/>
+        <result property="invoiceNo" column="invoice_no"/>
+        <result property="orderId" column="order_id"/>
+        <result property="orderNo" column="order_no"/>
+        <result property="customerId" column="customer_id"/>
+        <result property="customerName" column="customer_name"/>
+        <result property="title" column="title"/>
+        <result property="taxNo" column="tax_no"/>
+        <result property="amount" column="amount"/>
+        <result property="type" column="type"/>
+        <result property="status" column="status"/>
+        <result property="content" column="content"/>
+        <result property="remark" column="remark"/>
+        <result property="operatorId" column="operator_id"/>
+        <result property="operatorName" column="operator_name"/>
+        <result property="createTime" column="create_time"/>
+        <result property="cancelTime" column="cancel_time"/>
+    </resultMap>
+
+    <select id="findList" resultMap="InvoiceMap">
+        SELECT i.*, c.name as customer_name, u.real_name as operator_name
+        FROM t_invoice i
+        LEFT JOIN t_customer c ON i.customer_id = c.id
+        LEFT JOIN sys_user u ON i.operator_id = u.id
+        <where>
+            <if test="status != null and status != ''">
+                AND i.status = #{status}
+            </if>
+            <if test="orderNo != null and orderNo != ''">
+                AND i.order_no = #{orderNo}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (c.name LIKE CONCAT('%', #{keyword}, '%') OR i.invoice_no LIKE CONCAT('%', #{keyword}, '%')
+                     OR i.order_no LIKE CONCAT('%', #{keyword}, '%') OR i.title LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+        </where>
+        ORDER BY i.create_time DESC
+        LIMIT #{offset}, #{size}
+    </select>
+
+    <select id="count" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM t_invoice i
+        LEFT JOIN t_customer c ON i.customer_id = c.id
+        <where>
+            <if test="status != null and status != ''">
+                AND i.status = #{status}
+            </if>
+            <if test="orderNo != null and orderNo != ''">
+                AND i.order_no = #{orderNo}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (c.name LIKE CONCAT('%', #{keyword}, '%') OR i.invoice_no LIKE CONCAT('%', #{keyword}, '%')
+                     OR i.order_no LIKE CONCAT('%', #{keyword}, '%') OR i.title LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+        </where>
+    </select>
+
+    <update id="update">
+        UPDATE t_invoice
+        <set>
+            <if test="title != null">title = #{title},</if>
+            <if test="taxNo != null">tax_no = #{taxNo},</if>
+            <if test="amount != null">amount = #{amount},</if>
+            <if test="type != null">type = #{type},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="content != null">content = #{content},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="cancelTime != null">cancel_time = #{cancelTime}</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+</mapper>

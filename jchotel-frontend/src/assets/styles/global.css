@@ -1,0 +1,159 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+  background-color: #f5f7fa;
+  color: #303133;
+}
+
+/* 主题色变量 */
+:root {
+  --primary: #1e3a5f;
+  --accent: #d4af37;
+  --bg: #faf8f3;
+  --success: #52c41a;
+  --warning: #fa8c16;
+  --danger: #f5222d;
+  --info: #1890ff;
+  --purple: #722ed1;
+  --gray: #8c8c8c;
+}
+
+/* 通用页面卡片 */
+.page-container {
+  padding: 20px;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.page-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.search-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.table-card {
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* 状态标签颜色 */
+.status-idle {
+  color: var(--success);
+}
+.status-occupied {
+  color: var(--warning);
+}
+.status-maintenance {
+  color: var(--gray);
+}
+.status-pending {
+  color: var(--info);
+}
+.status-checkedIn {
+  color: var(--warning);
+}
+.status-checkedOut {
+  color: var(--purple);
+}
+.status-cancelled {
+  color: var(--danger);
+}
+
+/* 房态网格 */
+.room-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.room-item {
+  padding: 16px;
+  border-radius: 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.2s;
+  color: #fff;
+  font-weight: 500;
+}
+
+.room-item:hover {
+  transform: translateY(-2px);
+}
+
+.room-item.idle {
+  background-color: var(--success);
+}
+
+.room-item.occupied {
+  background-color: var(--warning);
+}
+
+.room-item.maintenance {
+  background-color: var(--gray);
+}
+
+.room-item .room-no {
+  font-size: 18px;
+  margin-bottom: 6px;
+}
+
+.room-item .room-status {
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+/* 统计卡片 */
+.stat-card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+}
+
+.stat-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  margin-right: 16px;
+  background-color: rgba(30, 58, 95, 0.1);
+  color: var(--primary);
+}
+
+.stat-info .stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1f2d3d;
+  line-height: 1.2;
+}
+
+.stat-info .stat-label {
+  font-size: 14px;
+  color: #909399;
+  margin-top: 4px;
+}
