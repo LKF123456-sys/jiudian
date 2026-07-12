@@ -17,6 +17,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * 保洁任务服务实现类
+ * 退房时自动创建保洁任务，经历分配→清洁中→待检查→已完成流程
+ * 查房通过后房间恢复空闲可售
+ */
 @Service
 public class CleaningTaskServiceImpl extends ServiceImpl<CleaningTaskMapper, CleaningTask> implements CleaningTaskService {
 
@@ -24,12 +29,8 @@ public class CleaningTaskServiceImpl extends ServiceImpl<CleaningTaskMapper, Cle
     private RoomMapper roomMapper;
 
     private void initPage(PageQuery query) {
-        if (query.getPage() == null || query.getPage() < 1) {
-            query.setPage(1);
-        }
-        if (query.getSize() == null || query.getSize() < 1) {
-            query.setSize(10);
-        }
+        if (query.getPage() == null || query.getPage() < 1) query.setPage(1);
+        if (query.getSize() == null || query.getSize() < 1) query.setSize(10);
         query.setOffset((query.getPage() - 1) * query.getSize());
     }
 
@@ -47,12 +48,13 @@ public class CleaningTaskServiceImpl extends ServiceImpl<CleaningTaskMapper, Cle
     @Override
     public Result<CleaningTask> detail(Long id) {
         CleaningTask task = baseMapper.findDetailById(id);
-        if (task == null) {
-            return Result.error("清扫任务不存在");
-        }
+        if (task == null) return Result.error("清扫任务不存在");
         return Result.success(task);
     }
 
+    /**
+     * 退房后自动创建保洁任务，房间状态设为脏房
+     */
     @Override
     @Transactional
     public void createFromCheckout(Long roomId, String roomNo, Long orderId, String remark) {
@@ -71,12 +73,8 @@ public class CleaningTaskServiceImpl extends ServiceImpl<CleaningTaskMapper, Cle
     @Transactional
     public Result assign(Long id, Long assigneeId, String assigneeName) {
         CleaningTask task = getById(id);
-        if (task == null) {
-            return Result.error("清扫任务不存在");
-        }
-        if (!CleaningStatus.PENDING.equals(task.getStatus())) {
-            return Result.error("只有待分配的任务才能分配保洁员");
-        }
+        if (task == null) return Result.error("清扫任务不存在");
+        if (!CleaningStatus.PENDING.equals(task.getStatus())) return Result.error("只有待分配的任务才能分配保洁员");
         task.setAssigneeId(assigneeId);
         task.setAssigneeName(assigneeName);
         task.setStatus(CleaningStatus.ASSIGNED);
@@ -88,12 +86,9 @@ public class CleaningTaskServiceImpl extends ServiceImpl<CleaningTaskMapper, Cle
     @Transactional
     public Result startCleaning(Long id) {
         CleaningTask task = getById(id);
-        if (task == null) {
-            return Result.error("清扫任务不存在");
-        }
-        if (!CleaningStatus.PENDING.equals(task.getStatus()) && !CleaningStatus.ASSIGNED.equals(task.getStatus())) {
+        if (task == null) return Result.error("清扫任务不存在");
+        if (!CleaningStatus.PENDING.equals(task.getStatus()) && !CleaningStatus.ASSIGNED.equals(task.getStatus()))
             return Result.error("只有待分配或已分配的任务才能开始清扫");
-        }
         task.setStatus(CleaningStatus.CLEANING);
         updateById(task);
         roomMapper.updateStatus(task.getRoomId(), RoomStatus.CLEANING);
@@ -104,28 +99,23 @@ public class CleaningTaskServiceImpl extends ServiceImpl<CleaningTaskMapper, Cle
     @Transactional
     public Result finishCleaning(Long id) {
         CleaningTask task = getById(id);
-        if (task == null) {
-            return Result.error("清扫任务不存在");
-        }
-        if (!CleaningStatus.CLEANING.equals(task.getStatus())) {
-            return Result.error("只有清扫中的任务才能完成");
-        }
+        if (task == null) return Result.error("清扫任务不存在");
+        if (!CleaningStatus.CLEANING.equals(task.getStatus())) return Result.error("只有清扫中的任务才能完成");
         task.setStatus(CleaningStatus.INSPECTING);
         task.setFinishTime(LocalDateTime.now());
         updateById(task);
         return Result.success("清扫完成，待查房", null);
     }
 
+    /**
+     * 查房通过，房间恢复空闲状态
+     */
     @Override
     @Transactional
     public Result inspect(Long id) {
         CleaningTask task = getById(id);
-        if (task == null) {
-            return Result.error("清扫任务不存在");
-        }
-        if (!CleaningStatus.INSPECTING.equals(task.getStatus())) {
-            return Result.error("只有待查房的任务才能查房");
-        }
+        if (task == null) return Result.error("清扫任务不存在");
+        if (!CleaningStatus.INSPECTING.equals(task.getStatus())) return Result.error("只有待查房的任务才能查房");
         task.setStatus(CleaningStatus.COMPLETED);
         task.setInspectTime(LocalDateTime.now());
         updateById(task);
@@ -137,12 +127,9 @@ public class CleaningTaskServiceImpl extends ServiceImpl<CleaningTaskMapper, Cle
     @Transactional
     public Result cancel(Long id) {
         CleaningTask task = getById(id);
-        if (task == null) {
-            return Result.error("清扫任务不存在");
-        }
-        if (CleaningStatus.COMPLETED.equals(task.getStatus()) || CleaningStatus.CANCELLED.equals(task.getStatus())) {
+        if (task == null) return Result.error("清扫任务不存在");
+        if (CleaningStatus.COMPLETED.equals(task.getStatus()) || CleaningStatus.CANCELLED.equals(task.getStatus()))
             return Result.error("该任务无法取消");
-        }
         task.setStatus(CleaningStatus.CANCELLED);
         updateById(task);
         return Result.success("取消成功", null);
