@@ -8,7 +8,7 @@ import com.jchotel.dto.PasswordDTO;
 import com.jchotel.entity.User;
 import com.jchotel.utils.Result;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;
 
 public interface UserService extends IService<User> {

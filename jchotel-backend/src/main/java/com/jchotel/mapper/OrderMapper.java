@@ -129,4 +129,7 @@ public interface OrderMapper extends BaseMapper<Order> {
 
     @Select("SELECT IFNULL(SUM(total_amount), 0) FROM t_order WHERE customer_id = #{customerId} AND status = 'checkedOut'")
     BigDecimal totalSpentByCustomerId(@Param("customerId") Long customerId);
+
+    @Select("${sql}")
+    List<Map<String, Object>> selectListBySql(@Param("sql") String sql);
 }

@@ -25,4 +25,11 @@ public class PageQuery {
     private Integer floor;
     private String category;
     private String priority;
+
+    public void normalize() {
+        if (page == null || page < 1) page = 1;
+        if (size == null || size < 1) size = 10;
+        if (size > 200) size = 200;
+        this.offset = (page - 1) * size;
+    }
 }
