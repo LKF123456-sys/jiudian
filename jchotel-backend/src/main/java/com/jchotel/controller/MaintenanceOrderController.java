@@ -37,7 +37,7 @@ public class MaintenanceOrderController {
     @PostMapping
     public Result create(@RequestBody MaintenanceOrder order, HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("userId");
-        User user = userMapper.findById(userId);
+        User user = userMapper.selectById(userId);
         String reporterName = user != null ? user.getRealName() : null;
         return maintenanceOrderService.create(order, userId, reporterName);
     }

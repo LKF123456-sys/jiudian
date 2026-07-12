@@ -1,5 +1,6 @@
 package com.jchotel.service;
 
+import com.baomidou.mybatisplus.extension.service.IService;
 import com.jchotel.dto.PageQuery;
 import com.jchotel.dto.PageResult;
 import com.jchotel.entity.Customer;
@@ -11,7 +12,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
-public interface CustomerService {
+public interface CustomerService extends IService<Customer> {
     Result<PageResult<Customer>> list(PageQuery query);
     Result<Customer> detail(Long id);
     Result<String> add(Customer customer);

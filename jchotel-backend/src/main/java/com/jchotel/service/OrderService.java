@@ -1,5 +1,6 @@
 package com.jchotel.service;
 
+import com.baomidou.mybatisplus.extension.service.IService;
 import com.jchotel.dto.ChangeRoomDTO;
 import com.jchotel.dto.CheckinDTO;
 import com.jchotel.dto.CheckoutDTO;
@@ -14,7 +15,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
-public interface OrderService {
+public interface OrderService extends IService<Order> {
     Result<PageResult<Order>> list(PageQuery query);
     Result<Order> detail(Long id);
     Result<Map<String, Object>> checkin(CheckinDTO checkinDTO, HttpServletRequest request);

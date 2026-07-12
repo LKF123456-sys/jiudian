@@ -1,5 +1,7 @@
 package com.jchotel.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.jchotel.constants.RoomStatus;
 import com.jchotel.dto.PageQuery;
 import com.jchotel.dto.PageResult;
@@ -7,7 +9,6 @@ import com.jchotel.entity.Room;
 import com.jchotel.mapper.RoomMapper;
 import com.jchotel.service.RoomService;
 import com.jchotel.utils.Result;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -15,10 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-public class RoomServiceImpl implements RoomService {
-
-    @Autowired
-    private RoomMapper roomMapper;
+public class RoomServiceImpl extends ServiceImpl<RoomMapper, Room> implements RoomService {
 
     @Override
     public Result<PageResult<Room>> list(PageQuery query) {
@@ -30,8 +28,8 @@ public class RoomServiceImpl implements RoomService {
         }
         query.setOffset((query.getPage() - 1) * query.getSize());
 
-        Long total = roomMapper.count(query);
-        List<Room> list = roomMapper.findList(query);
+        Long total = baseMapper.count(query);
+        List<Room> list = baseMapper.findList(query);
 
         PageResult<Room> pageResult = new PageResult<>();
         pageResult.setTotal(total);
@@ -41,7 +39,7 @@ public class RoomServiceImpl implements RoomService {
 
     @Override
     public Result<Room> detail(Long id) {
-        Room room = roomMapper.findById(id);
+        Room room = baseMapper.findDetailById(id);
         if (room == null) {
             return Result.error("客房不存在");
         }
@@ -53,23 +51,23 @@ public class RoomServiceImpl implements RoomService {
         if (room.getRoomNo() == null || room.getRoomNo().trim().isEmpty()) {
             return Result.error("房间号不能为空");
         }
-        if (roomMapper.findByRoomNo(room.getRoomNo()) != null) {
+        if (baseMapper.findByRoomNo(room.getRoomNo()) != null) {
             return Result.error("房间号已存在");
         }
         if (room.getStatus() == null || room.getStatus().isEmpty()) {
             room.setStatus(RoomStatus.IDLE);
         }
-        roomMapper.insert(room);
+        save(room);
         return Result.success("新增成功", null);
     }
 
     @Override
     public Result<String> update(Room room) {
-        Room exist = roomMapper.findByRoomNo(room.getRoomNo());
+        Room exist = baseMapper.findByRoomNo(room.getRoomNo());
         if (exist != null && !exist.getId().equals(room.getId())) {
             return Result.error("房间号已存在");
         }
-        Room oldRoom = roomMapper.findById(room.getId());
+        Room oldRoom = getById(room.getId());
         if (oldRoom == null) {
             return Result.error("客房不存在");
         }
@@ -77,26 +75,26 @@ public class RoomServiceImpl implements RoomService {
                 && !RoomStatus.OCCUPIED.equals(room.getStatus())) {
             return Result.error("入住中的房间不能直接修改状态，请先办理退房");
         }
-        roomMapper.update(room);
+        updateById(room);
         return Result.success("修改成功", null);
     }
 
     @Override
     public Result<String> delete(Long id) {
-        Room room = roomMapper.findById(id);
+        Room room = getById(id);
         if (room == null) {
             return Result.error("客房不存在");
         }
         if (RoomStatus.OCCUPIED.equals(room.getStatus())) {
             return Result.error("入住中的房间不能删除，请先办理退房");
         }
-        roomMapper.deleteById(id);
+        removeById(id);
         return Result.success("删除成功", null);
     }
 
     @Override
     public Result<String> updateStatus(Long id, String status) {
-        Room room = roomMapper.findById(id);
+        Room room = getById(id);
         if (room == null) {
             return Result.error("客房不存在");
         }
@@ -106,19 +104,19 @@ public class RoomServiceImpl implements RoomService {
         if (RoomStatus.MAINTENANCE.equals(status) && RoomStatus.OCCUPIED.equals(room.getStatus())) {
             return Result.error("入住中的房间不能设为维修状态");
         }
-        roomMapper.updateStatus(id, status);
+        baseMapper.updateStatus(id, status);
         return Result.success("状态更新成功", null);
     }
 
     @Override
     public Result<List<Room>> board() {
-        List<Room> rooms = roomMapper.findRoomsWithStats();
+        List<Room> rooms = baseMapper.findRoomsWithStats();
         return Result.success(rooms);
     }
 
     @Override
     public Result<Map<String, Object>> statusStats() {
-        List<Room> rooms = roomMapper.findAll();
+        List<Room> rooms = list();
         Map<String, Object> stats = new HashMap<>();
         int total = rooms.size();
         int idle = 0, occupied = 0, maintenance = 0, cleaning = 0, dirty = 0;
@@ -142,7 +140,7 @@ public class RoomServiceImpl implements RoomService {
 
     @Override
     public Result<List<Room>> available(Long typeId, String checkIn, String checkOut) {
-        List<Room> rooms = roomMapper.findAvailableRooms(typeId, checkIn, checkOut);
+        List<Room> rooms = baseMapper.findAvailableRooms(typeId, checkIn, checkOut);
         return Result.success(rooms);
     }
 }

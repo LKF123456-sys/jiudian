@@ -86,24 +86,4 @@
         </where>
     </select>
 
-    <update id="update">
-        UPDATE t_maintenance_order
-        <set>
-            <if test="roomId != null">room_id = #{roomId},</if>
-            <if test="roomNo != null">room_no = #{roomNo},</if>
-            <if test="title != null">title = #{title},</if>
-            <if test="description != null">description = #{description},</if>
-            <if test="category != null">category = #{category},</if>
-            <if test="priority != null">priority = #{priority},</if>
-            <if test="assigneeId != null">assignee_id = #{assigneeId},</if>
-            <if test="assigneeName != null">assignee_name = #{assigneeName},</if>
-            <if test="status != null">status = #{status},</if>
-            <if test="solution != null">solution = #{solution},</if>
-            <if test="cost != null">cost = #{cost},</if>
-            <if test="finishTime != null">finish_time = #{finishTime},</if>
-            <if test="verifyTime != null">verify_time = #{verifyTime}</if>
-        </set>
-        WHERE id = #{id}
-    </update>
-
 </mapper>

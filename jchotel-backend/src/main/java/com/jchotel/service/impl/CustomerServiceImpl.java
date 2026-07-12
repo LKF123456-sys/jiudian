@@ -1,5 +1,6 @@
 package com.jchotel.service.impl;
 
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.jchotel.constants.VipConfig;
 import com.jchotel.dto.PageQuery;
 import com.jchotel.dto.PageResult;
@@ -24,12 +25,9 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-public class CustomerServiceImpl implements CustomerService {
+public class CustomerServiceImpl extends ServiceImpl<CustomerMapper, Customer> implements CustomerService {
 
     private static final DateTimeFormatter DATETIME_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-
-    @Autowired
-    private CustomerMapper customerMapper;
 
     @Autowired
     private OrderMapper orderMapper;
@@ -50,8 +48,8 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     public Result<PageResult<Customer>> list(PageQuery query) {
         initPage(query);
-        Long total = customerMapper.count(query);
-        List<Customer> list = customerMapper.findList(query);
+        Long total = baseMapper.count(query);
+        List<Customer> list = baseMapper.findList(query);
         PageResult<Customer> pageResult = new PageResult<>();
         pageResult.setTotal(total);
         pageResult.setList(list);
@@ -60,7 +58,7 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     public Result<Customer> detail(Long id) {
-        Customer customer = customerMapper.findById(id);
+        Customer customer = getById(id);
         if (customer == null) {
             return Result.error("客户不存在");
         }
@@ -75,7 +73,7 @@ public class CustomerServiceImpl implements CustomerService {
         if (customer.getPhone() == null || customer.getPhone().trim().isEmpty()) {
             return Result.error("手机号不能为空");
         }
-        Customer byPhone = customerMapper.findByPhone(customer.getPhone());
+        Customer byPhone = baseMapper.findByPhone(customer.getPhone());
         if (byPhone != null) {
             return Result.error("该手机号已存在");
         }
@@ -91,29 +89,29 @@ public class CustomerServiceImpl implements CustomerService {
         if (customer.getTotalSpent() == null) {
             customer.setTotalSpent(BigDecimal.ZERO);
         }
-        customerMapper.insert(customer);
+        save(customer);
         return Result.success("新增成功", null);
     }
 
     @Override
     public Result<String> update(Customer customer) {
-        Customer exist = customerMapper.findById(customer.getId());
+        Customer exist = getById(customer.getId());
         if (exist == null) {
             return Result.error("客户不存在");
         }
         if (customer.getPhone() != null && !customer.getPhone().equals(exist.getPhone())) {
-            Customer byPhone = customerMapper.findByPhone(customer.getPhone());
+            Customer byPhone = baseMapper.findByPhone(customer.getPhone());
             if (byPhone != null) {
                 return Result.error("该手机号已被其他客户使用");
             }
         }
-        customerMapper.update(customer);
+        updateById(customer);
         return Result.success("修改成功", null);
     }
 
     @Override
     public Result<String> delete(Long id) {
-        Customer customer = customerMapper.findById(id);
+        Customer customer = getById(id);
         if (customer == null) {
             return Result.error("客户不存在");
         }
@@ -121,13 +119,13 @@ public class CustomerServiceImpl implements CustomerService {
         if (activeOrders > 0) {
             return Result.error("该客户存在未完成订单，无法删除");
         }
-        customerMapper.deleteById(id);
+        removeById(id);
         return Result.success("删除成功", null);
     }
 
     @Override
     public Result<String> addToBlacklist(Long id, String reason) {
-        Customer customer = customerMapper.findById(id);
+        Customer customer = getById(id);
         if (customer == null) {
             return Result.error("客户不存在");
         }
@@ -138,39 +136,39 @@ public class CustomerServiceImpl implements CustomerService {
         if (activeOrders > 0) {
             return Result.error("该客户存在未完成订单，无法加入黑名单");
         }
-        customerMapper.updateBlacklist(id, 1, reason);
+        baseMapper.updateBlacklist(id, 1, reason);
         return Result.success("已加入黑名单", null);
     }
 
     @Override
     public Result<String> removeFromBlacklist(Long id) {
-        Customer customer = customerMapper.findById(id);
+        Customer customer = getById(id);
         if (customer == null) {
             return Result.error("客户不存在");
         }
         if (customer.getIsBlacklist() == null || customer.getIsBlacklist() == 0) {
             return Result.error("该客户不在黑名单中");
         }
-        customerMapper.updateBlacklist(id, 0, null);
+        baseMapper.updateBlacklist(id, 0, null);
         return Result.success("已移出黑名单", null);
     }
 
     @Override
     public Result<List<Customer>> birthdayList() {
-        List<Customer> list = customerMapper.findBirthdayCustomers(LocalDate.now());
+        List<Customer> list = baseMapper.findBirthdayCustomers(LocalDate.now());
         return Result.success(list);
     }
 
     @Override
     public Result<List<Customer>> blacklist() {
-        List<Customer> list = customerMapper.findBlacklistCustomers();
+        List<Customer> list = baseMapper.findBlacklistCustomers();
         return Result.success(list);
     }
 
     @Override
     @Transactional
     public Result<Integer> upgradeVipLevel(Long customerId) {
-        Customer customer = customerMapper.findById(customerId);
+        Customer customer = getById(customerId);
         if (customer == null) {
             return Result.error("客户不存在");
         }
@@ -178,7 +176,10 @@ public class CustomerServiceImpl implements CustomerService {
         int newLevel = calculateVipLevel(completedOrders);
         int oldLevel = customer.getVipLevel() != null ? customer.getVipLevel() : 0;
         if (newLevel > oldLevel) {
-            customerMapper.updateVipLevel(customerId, newLevel);
+            Customer upd = new Customer();
+            upd.setId(customerId);
+            upd.setVipLevel(newLevel);
+            updateById(upd);
             return Result.success("会员等级已升级", newLevel);
         }
         return Result.success("无需升级", oldLevel);
@@ -187,12 +188,12 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     @Transactional
     public Result<String> addSpent(Long customerId, BigDecimal amount, LocalDateTime stayTime) {
-        Customer customer = customerMapper.findById(customerId);
+        Customer customer = getById(customerId);
         if (customer == null) {
             return Result.error("客户不存在");
         }
-        customerMapper.addSpent(customerId, amount);
-        customerMapper.increaseCheckInCount(customerId);
+        baseMapper.addSpent(customerId, amount);
+        baseMapper.increaseCheckInCount(customerId);
         upgradeVipLevel(customerId);
         return Result.success("消费记录已更新", null);
     }
@@ -207,7 +208,7 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     public Result<Map<String, Object>> getCustomerStats(Long customerId) {
-        Customer customer = customerMapper.findById(customerId);
+        Customer customer = getById(customerId);
         if (customer == null) {
             return Result.error("客户不存在");
         }

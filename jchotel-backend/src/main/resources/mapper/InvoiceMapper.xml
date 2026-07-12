@@ -61,19 +61,4 @@
         </where>
     </select>
 
-    <update id="update">
-        UPDATE t_invoice
-        <set>
-            <if test="title != null">title = #{title},</if>
-            <if test="taxNo != null">tax_no = #{taxNo},</if>
-            <if test="amount != null">amount = #{amount},</if>
-            <if test="type != null">type = #{type},</if>
-            <if test="status != null">status = #{status},</if>
-            <if test="content != null">content = #{content},</if>
-            <if test="remark != null">remark = #{remark},</if>
-            <if test="cancelTime != null">cancel_time = #{cancelTime}</if>
-        </set>
-        WHERE id = #{id}
-    </update>
-
 </mapper>

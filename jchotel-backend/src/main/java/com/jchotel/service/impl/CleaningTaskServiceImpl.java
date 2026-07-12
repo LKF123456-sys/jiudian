@@ -1,5 +1,6 @@
 package com.jchotel.service.impl;
 
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.jchotel.constants.CleaningStatus;
 import com.jchotel.constants.RoomStatus;
 import com.jchotel.dto.PageQuery;
@@ -17,10 +18,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
-public class CleaningTaskServiceImpl implements CleaningTaskService {
-
-    @Autowired
-    private CleaningTaskMapper cleaningTaskMapper;
+public class CleaningTaskServiceImpl extends ServiceImpl<CleaningTaskMapper, CleaningTask> implements CleaningTaskService {
 
     @Autowired
     private RoomMapper roomMapper;
@@ -38,8 +36,8 @@ public class CleaningTaskServiceImpl implements CleaningTaskService {
     @Override
     public Result<PageResult<CleaningTask>> list(PageQuery query) {
         initPage(query);
-        Long total = cleaningTaskMapper.count(query);
-        List<CleaningTask> list = cleaningTaskMapper.findList(query);
+        Long total = baseMapper.count(query);
+        List<CleaningTask> list = baseMapper.findList(query);
         PageResult<CleaningTask> pageResult = new PageResult<>();
         pageResult.setTotal(total);
         pageResult.setList(list);
@@ -48,7 +46,7 @@ public class CleaningTaskServiceImpl implements CleaningTaskService {
 
     @Override
     public Result<CleaningTask> detail(Long id) {
-        CleaningTask task = cleaningTaskMapper.findById(id);
+        CleaningTask task = baseMapper.findDetailById(id);
         if (task == null) {
             return Result.error("清扫任务不存在");
         }
@@ -65,14 +63,14 @@ public class CleaningTaskServiceImpl implements CleaningTaskService {
         task.setStatus(CleaningStatus.PENDING);
         task.setPriority("normal");
         task.setRemark(remark);
-        cleaningTaskMapper.insert(task);
+        save(task);
         roomMapper.updateStatus(roomId, RoomStatus.DIRTY);
     }
 
     @Override
     @Transactional
     public Result assign(Long id, Long assigneeId, String assigneeName) {
-        CleaningTask task = cleaningTaskMapper.findById(id);
+        CleaningTask task = getById(id);
         if (task == null) {
             return Result.error("清扫任务不存在");
         }
@@ -82,14 +80,14 @@ public class CleaningTaskServiceImpl implements CleaningTaskService {
         task.setAssigneeId(assigneeId);
         task.setAssigneeName(assigneeName);
         task.setStatus(CleaningStatus.ASSIGNED);
-        cleaningTaskMapper.update(task);
+        updateById(task);
         return Result.success("分配成功", null);
     }
 
     @Override
     @Transactional
     public Result startCleaning(Long id) {
-        CleaningTask task = cleaningTaskMapper.findById(id);
+        CleaningTask task = getById(id);
         if (task == null) {
             return Result.error("清扫任务不存在");
         }
@@ -97,7 +95,7 @@ public class CleaningTaskServiceImpl implements CleaningTaskService {
             return Result.error("只有待分配或已分配的任务才能开始清扫");
         }
         task.setStatus(CleaningStatus.CLEANING);
-        cleaningTaskMapper.update(task);
+        updateById(task);
         roomMapper.updateStatus(task.getRoomId(), RoomStatus.CLEANING);
         return Result.success("开始清扫", null);
     }
@@ -105,7 +103,7 @@ public class CleaningTaskServiceImpl implements CleaningTaskService {
     @Override
     @Transactional
     public Result finishCleaning(Long id) {
-        CleaningTask task = cleaningTaskMapper.findById(id);
+        CleaningTask task = getById(id);
         if (task == null) {
             return Result.error("清扫任务不存在");
         }
@@ -114,14 +112,14 @@ public class CleaningTaskServiceImpl implements CleaningTaskService {
         }
         task.setStatus(CleaningStatus.INSPECTING);
         task.setFinishTime(LocalDateTime.now());
-        cleaningTaskMapper.update(task);
+        updateById(task);
         return Result.success("清扫完成，待查房", null);
     }
 
     @Override
     @Transactional
     public Result inspect(Long id) {
-        CleaningTask task = cleaningTaskMapper.findById(id);
+        CleaningTask task = getById(id);
         if (task == null) {
             return Result.error("清扫任务不存在");
         }
@@ -130,7 +128,7 @@ public class CleaningTaskServiceImpl implements CleaningTaskService {
         }
         task.setStatus(CleaningStatus.COMPLETED);
         task.setInspectTime(LocalDateTime.now());
-        cleaningTaskMapper.update(task);
+        updateById(task);
         roomMapper.updateStatus(task.getRoomId(), RoomStatus.IDLE);
         return Result.success("查房通过，房间已就绪", null);
     }
@@ -138,7 +136,7 @@ public class CleaningTaskServiceImpl implements CleaningTaskService {
     @Override
     @Transactional
     public Result cancel(Long id) {
-        CleaningTask task = cleaningTaskMapper.findById(id);
+        CleaningTask task = getById(id);
         if (task == null) {
             return Result.error("清扫任务不存在");
         }
@@ -146,18 +144,18 @@ public class CleaningTaskServiceImpl implements CleaningTaskService {
             return Result.error("该任务无法取消");
         }
         task.setStatus(CleaningStatus.CANCELLED);
-        cleaningTaskMapper.update(task);
+        updateById(task);
         return Result.success("取消成功", null);
     }
 
     @Override
     public int countByStatus(String status) {
-        return cleaningTaskMapper.countByStatus(status);
+        return baseMapper.countByStatus(status);
     }
 
     @Override
     public Result<List<CleaningTask>> findPendingAndAssigned() {
-        List<CleaningTask> list = cleaningTaskMapper.findPendingAndAssigned();
+        List<CleaningTask> list = baseMapper.findPendingAndAssigned();
         return Result.success(list);
     }
 }

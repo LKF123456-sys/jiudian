@@ -68,23 +68,6 @@
         </where>
     </select>
 
-    <update id="update">
-        UPDATE t_cleaning_task
-        <set>
-            <if test="roomId != null">room_id = #{roomId},</if>
-            <if test="roomNo != null">room_no = #{roomNo},</if>
-            <if test="orderId != null">order_id = #{orderId},</if>
-            <if test="assigneeId != null">assignee_id = #{assigneeId},</if>
-            <if test="assigneeName != null">assignee_name = #{assigneeName},</if>
-            <if test="status != null">status = #{status},</if>
-            <if test="priority != null">priority = #{priority},</if>
-            <if test="remark != null">remark = #{remark},</if>
-            <if test="finishTime != null">finish_time = #{finishTime},</if>
-            <if test="inspectTime != null">inspect_time = #{inspectTime}</if>
-        </set>
-        WHERE id = #{id}
-    </update>
-
     <select id="findAllByStatus" resultMap="CleaningTaskMap">
         SELECT ct.*, r.room_no, u.real_name as assignee_name
         FROM t_cleaning_task ct

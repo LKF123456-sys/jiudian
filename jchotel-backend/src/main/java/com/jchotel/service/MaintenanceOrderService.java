@@ -1,5 +1,6 @@
 package com.jchotel.service;
 
+import com.baomidou.mybatisplus.extension.service.IService;
 import com.jchotel.dto.PageQuery;
 import com.jchotel.dto.PageResult;
 import com.jchotel.entity.MaintenanceOrder;
@@ -7,7 +8,7 @@ import com.jchotel.utils.Result;
 
 import java.math.BigDecimal;
 
-public interface MaintenanceOrderService {
+public interface MaintenanceOrderService extends IService<MaintenanceOrder> {
     Result<PageResult<MaintenanceOrder>> list(PageQuery query);
     Result<MaintenanceOrder> detail(Long id);
     Result create(MaintenanceOrder order, Long reporterId, String reporterName);

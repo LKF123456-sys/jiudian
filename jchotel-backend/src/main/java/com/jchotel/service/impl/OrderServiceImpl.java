@@ -1,5 +1,6 @@
 package com.jchotel.service.impl;
 
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.jchotel.constants.*;
 import com.jchotel.dto.ChangeRoomDTO;
 import com.jchotel.dto.CheckinDTO;
@@ -27,7 +28,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 @Service
-public class OrderServiceImpl implements OrderService {
+public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements OrderService {
 
     private static final DateTimeFormatter DATETIME_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
@@ -35,8 +36,6 @@ public class OrderServiceImpl implements OrderService {
     private static final int CHECKIN_TOLERANCE_MINUTES = 15;
     private static final int IMMEDIATE_CHECKIN_WINDOW_MINUTES = 30;
 
-    @Autowired
-    private OrderMapper orderMapper;
     @Autowired
     private RoomMapper roomMapper;
     @Autowired
@@ -102,15 +101,15 @@ public class OrderServiceImpl implements OrderService {
             Customer upd = new Customer();
             upd.setId(customer.getId());
             upd.setVipLevel(newLevel);
-            customerMapper.update(upd);
+            customerMapper.updateById(upd);
         }
     }
 
     @Override
     public Result<PageResult<Order>> list(PageQuery query) {
         initPage(query);
-        Long total = orderMapper.count(query);
-        List<Order> list = orderMapper.findList(query);
+        Long total = baseMapper.count(query);
+        List<Order> list = baseMapper.findList(query);
         PageResult<Order> pageResult = new PageResult<>();
         pageResult.setTotal(total);
         pageResult.setList(list);
@@ -119,7 +118,9 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public Result<Order> detail(Long id) {
-        return Result.success(orderMapper.findById(id));
+        Order order = baseMapper.findDetailById(id);
+        if (order == null) return Result.error("订单不存在");
+        return Result.success(order);
     }
 
     @Override
@@ -136,14 +137,14 @@ public class OrderServiceImpl implements OrderService {
             return Result.error("预计退房时间必须晚于入住时间");
         }
 
-        Room room = roomMapper.findById(checkinDTO.getRoomId());
+        Room room = roomMapper.selectById(checkinDTO.getRoomId());
         if (room == null) return Result.error("客房不存在");
         if (RoomStatus.MAINTENANCE.equals(room.getStatus())) return Result.error("维修中的房间不可预约");
         if (RoomStatus.CLEANING.equals(room.getStatus()) || RoomStatus.DIRTY.equals(room.getStatus())) {
             return Result.error("该房间正在清扫中，暂时不可入住");
         }
 
-        Customer customer = customerMapper.findById(checkinDTO.getCustomerId());
+        Customer customer = customerMapper.selectById(checkinDTO.getCustomerId());
         if (customer == null) return Result.error("客户不存在");
         if (customer.getIsBlacklist() != null && customer.getIsBlacklist() == 1) {
             return Result.error("该客户在黑名单中：" + (customer.getBlacklistReason() != null ? customer.getBlacklistReason() : "禁止入住"));
@@ -156,7 +157,7 @@ public class OrderServiceImpl implements OrderService {
         String checkInStr = checkInTime.format(DATETIME_FMT);
         String expectedCheckOutStr = expectedCheckOutTime.format(DATETIME_FMT);
 
-        int conflicts = orderMapper.countConflictOrders(checkinDTO.getRoomId(), checkInStr, expectedCheckOutStr);
+        int conflicts = baseMapper.countConflictOrders(checkinDTO.getRoomId(), checkInStr, expectedCheckOutStr);
         if (conflicts > 0) {
             return Result.error("该房间在所选时间段已被预约或入住，请选择其他房间或时间段");
         }
@@ -164,7 +165,7 @@ public class OrderServiceImpl implements OrderService {
         int nights = calculateNights(checkInTime, expectedCheckOutTime);
         RoomType roomType = null;
         if (room.getTypeId() != null) {
-            roomType = roomTypeMapper.findById(room.getTypeId());
+            roomType = roomTypeMapper.selectById(room.getTypeId());
         }
 
         BigDecimal expectedRoomAmount = BigDecimal.ZERO;
@@ -199,7 +200,7 @@ public class OrderServiceImpl implements OrderService {
             order.setStatus(OrderStatus.CHECKED_IN);
             roomMapper.updateStatus(room.getId(), RoomStatus.OCCUPIED);
             customerMapper.increaseCheckInCount(customer.getId());
-            orderMapper.insert(order);
+            save(order);
             customer.setCheckInCount((customer.getCheckInCount() == null ? 0 : customer.getCheckInCount()) + 1);
             upgradeVipIfNeeded(customer);
 
@@ -222,7 +223,7 @@ public class OrderServiceImpl implements OrderService {
             return Result.success("入住办理成功", data);
         } else {
             order.setStatus(OrderStatus.PENDING);
-            orderMapper.insert(order);
+            save(order);
             data.put("orderId", order.getId());
             data.put("orderNo", order.getOrderNo());
             data.put("status", OrderStatus.PENDING);
@@ -233,15 +234,15 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public Result<Map<String, Object>> settlePending(Long id, HttpServletRequest request) {
-        Order order = orderMapper.findById(id);
+        Order order = getById(id);
         if (order == null) return Result.error("订单不存在");
         if (!OrderStatus.PENDING.equals(order.getStatus())) return Result.error("只有待入住订单才能办理入住");
 
-        Room room = roomMapper.findById(order.getRoomId());
+        Room room = roomMapper.selectById(order.getRoomId());
         if (room == null) return Result.error("客房不存在");
         if (RoomStatus.MAINTENANCE.equals(room.getStatus())) return Result.error("维修中的房间无法办理入住");
 
-        Customer customer = customerMapper.findById(order.getCustomerId());
+        Customer customer = customerMapper.selectById(order.getCustomerId());
         if (customer == null) return Result.error("客户不存在");
         if (customer.getIsBlacklist() != null && customer.getIsBlacklist() == 1) {
             return Result.error("该客户在黑名单中，无法办理入住");
@@ -254,7 +255,7 @@ public class OrderServiceImpl implements OrderService {
         int settleNights = calculateNights(now, order.getExpectedCheckOutTime());
         RoomType settleRoomType = null;
         if (room.getTypeId() != null) {
-            settleRoomType = roomTypeMapper.findById(room.getTypeId());
+            settleRoomType = roomTypeMapper.selectById(room.getTypeId());
         }
         BigDecimal settleRoomAmount = BigDecimal.ZERO;
         LocalDateTime settleDayCursor = now;
@@ -266,7 +267,7 @@ public class OrderServiceImpl implements OrderService {
         order.setRoomAmount(settleRoomAmount);
         order.setTotalAmount(settleRoomAmount);
 
-        orderMapper.update(order);
+        updateById(order);
 
         roomMapper.updateStatus(room.getId(), RoomStatus.OCCUPIED);
         customerMapper.increaseCheckInCount(customer.getId());
@@ -282,7 +283,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public Result<Map<String, Object>> checkout(Long id, CheckoutDTO checkoutDTO) {
-        Order order = orderMapper.findById(id);
+        Order order = getById(id);
         if (order == null) return Result.error("订单不存在");
         if (!OrderStatus.CHECKED_IN.equals(order.getStatus())) return Result.error("只有已入住订单才能退房");
 
@@ -293,12 +294,12 @@ public class OrderServiceImpl implements OrderService {
         if (!actualCheckOutTime.isAfter(order.getCheckInTime())) return Result.error("退房时间必须晚于入住时间");
 
         int nights = calculateNights(order.getCheckInTime(), actualCheckOutTime);
-        Room room = roomMapper.findById(order.getRoomId());
+        Room room = roomMapper.selectById(order.getRoomId());
         if (room == null) return Result.error("房间信息不存在，无法退房");
-        Customer customer = customerMapper.findById(order.getCustomerId());
+        Customer customer = customerMapper.selectById(order.getCustomerId());
         RoomType roomType = null;
         if (room.getTypeId() != null) {
-            roomType = roomTypeMapper.findById(room.getTypeId());
+            roomType = roomTypeMapper.selectById(room.getTypeId());
         }
 
         BigDecimal roomAmount = BigDecimal.ZERO;
@@ -321,10 +322,10 @@ public class OrderServiceImpl implements OrderService {
         order.setExtraAmount(extraAmount);
         order.setTotalAmount(totalAmount);
         order.setStatus(OrderStatus.CHECKED_OUT);
-        orderMapper.update(order);
+        updateById(order);
 
         roomMapper.updateStatus(room.getId(), RoomStatus.DIRTY);
-        orderMapper.updateCustomerSpending(order.getCustomerId(), totalAmount);
+        baseMapper.updateCustomerSpending(order.getCustomerId(), totalAmount);
         cleaningTaskService.createFromCheckout(room.getId(), room.getRoomNo(), order.getId(), order.getRemark());
 
         BigDecimal avgPrice = nights > 0 ? roomAmount.divide(BigDecimal.valueOf(nights), 2, RoundingMode.HALF_UP) : BigDecimal.ZERO;
@@ -335,7 +336,7 @@ public class OrderServiceImpl implements OrderService {
         data.put("customerName", customer != null ? customer.getName() : "");
         data.put("customerPhone", customer != null ? customer.getPhone() : "");
         data.put("roomNo", room.getRoomNo());
-        data.put("roomTypeName", room.getTypeName());
+        data.put("roomTypeName", roomType != null ? roomType.getName() : "");
         data.put("nights", nights);
         data.put("checkInTime", order.getCheckInTime());
         data.put("actualCheckOutTime", actualCheckOutTime);
@@ -354,18 +355,18 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public Result<String> cancel(Long id) {
-        Order order = orderMapper.findById(id);
+        Order order = getById(id);
         if (order == null) return Result.error("订单不存在");
         if (!OrderStatus.PENDING.equals(order.getStatus())) return Result.error("只有待入住订单才能取消");
         order.setStatus(OrderStatus.CANCELLED);
-        orderMapper.update(order);
+        updateById(order);
         return Result.success("取消成功", null);
     }
 
     @Override
     @Transactional
     public Result<Map<String, Object>> extendStay(ExtendStayDTO dto, HttpServletRequest request) {
-        Order order = orderMapper.findById(dto.getOrderId());
+        Order order = getById(dto.getOrderId());
         if (order == null) return Result.error("订单不存在");
         if (!OrderStatus.CHECKED_IN.equals(order.getStatus())) return Result.error("只有在住订单才能续住");
 
@@ -374,20 +375,19 @@ public class OrderServiceImpl implements OrderService {
             return Result.error("新退房时间必须晚于原预计退房时间");
         }
 
-        String nowStr = LocalDateTime.now().format(DATETIME_FMT);
         String newOutStr = newCheckOut.format(DATETIME_FMT);
-        int conflicts = orderMapper.countConflictOrdersExcludeId(order.getRoomId(),
+        int conflicts = baseMapper.countConflictOrdersExcludeId(order.getRoomId(),
                 order.getExpectedCheckOutTime().format(DATETIME_FMT), newOutStr, order.getId());
         if (conflicts > 0) {
             return Result.error("续住时段房间已被预约，无法续住");
         }
 
         int extraNights = calculateNights(order.getExpectedCheckOutTime(), newCheckOut);
-        Room room = roomMapper.findById(order.getRoomId());
-        Customer customer = customerMapper.findById(order.getCustomerId());
+        Room room = roomMapper.selectById(order.getRoomId());
+        Customer customer = customerMapper.selectById(order.getCustomerId());
         RoomType roomType = null;
         if (room != null && room.getTypeId() != null) {
-            roomType = roomTypeMapper.findById(room.getTypeId());
+            roomType = roomTypeMapper.selectById(room.getTypeId());
         }
 
         BigDecimal extraRoomAmount = BigDecimal.ZERO;
@@ -403,7 +403,7 @@ public class OrderServiceImpl implements OrderService {
         order.setExpectedCheckOutTime(newCheckOut);
         order.setRoomAmount(currentRoomAmount.add(extraRoomAmount).setScale(2, RoundingMode.HALF_UP));
         order.setTotalAmount(order.getRoomAmount().add(currentExtraAmount).setScale(2, RoundingMode.HALF_UP));
-        orderMapper.update(order);
+        updateById(order);
 
         Map<String, Object> data = new HashMap<>();
         data.put("orderId", order.getId());
@@ -417,27 +417,27 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public Result<Map<String, Object>> changeRoom(ChangeRoomDTO dto, HttpServletRequest request) {
-        Order order = orderMapper.findById(dto.getOrderId());
+        Order order = getById(dto.getOrderId());
         if (order == null) return Result.error("订单不存在");
         if (!OrderStatus.CHECKED_IN.equals(order.getStatus())) return Result.error("只有在住订单才能换房");
 
-        Room toRoom = roomMapper.findById(dto.getToRoomId());
+        Room toRoom = roomMapper.selectById(dto.getToRoomId());
         if (toRoom == null) return Result.error("目标房间不存在");
         if (!RoomStatus.IDLE.equals(toRoom.getStatus())) return Result.error("目标房间当前不可用");
 
-        Room fromRoom = roomMapper.findById(order.getRoomId());
+        Room fromRoom = roomMapper.selectById(order.getRoomId());
         if (fromRoom.getId().equals(toRoom.getId())) return Result.error("不能换入同一房间");
 
         String nowStr = LocalDateTime.now().format(DATETIME_FMT);
         String outStr = order.getExpectedCheckOutTime().format(DATETIME_FMT);
-        int conflicts = orderMapper.countConflictOrders(toRoom.getId(), nowStr, outStr);
+        int conflicts = baseMapper.countConflictOrders(toRoom.getId(), nowStr, outStr);
         if (conflicts > 0) return Result.error("目标房间在剩余时段已被占用");
 
-        Customer changeCustomer = customerMapper.findById(order.getCustomerId());
+        Customer changeCustomer = customerMapper.selectById(order.getCustomerId());
         RoomType fromRoomType = null;
         RoomType toRoomType = null;
-        if (fromRoom.getTypeId() != null) fromRoomType = roomTypeMapper.findById(fromRoom.getTypeId());
-        if (toRoom.getTypeId() != null) toRoomType = roomTypeMapper.findById(toRoom.getTypeId());
+        if (fromRoom.getTypeId() != null) fromRoomType = roomTypeMapper.selectById(fromRoom.getTypeId());
+        if (toRoom.getTypeId() != null) toRoomType = roomTypeMapper.selectById(toRoom.getTypeId());
 
         int remainingDays = calculateNights(LocalDateTime.now(), order.getExpectedCheckOutTime());
         BigDecimal remainingFromAmount = BigDecimal.ZERO;
@@ -475,7 +475,7 @@ public class OrderServiceImpl implements OrderService {
         BigDecimal changeCurrentExtraAmount = order.getExtraAmount() != null ? order.getExtraAmount() : BigDecimal.ZERO;
         order.setRoomAmount(changeCurrentRoomAmount.add(totalPriceDiff).setScale(2, RoundingMode.HALF_UP));
         order.setTotalAmount(order.getRoomAmount().add(changeCurrentExtraAmount).setScale(2, RoundingMode.HALF_UP));
-        orderMapper.update(order);
+        updateById(order);
 
         Map<String, Object> data = new HashMap<>();
         data.put("orderId", order.getId());
@@ -491,30 +491,30 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public Result<List<Order>> todayArrivals() {
-        return Result.success(orderMapper.findTodayArrivals());
+        return Result.success(baseMapper.findTodayArrivals());
     }
 
     @Override
     public Result<List<Order>> todayDepartures() {
-        return Result.success(orderMapper.findTodayDepartures());
+        return Result.success(baseMapper.findTodayDepartures());
     }
 
     @Override
     public Result<List<Order>> customerOrders(Long customerId) {
-        return Result.success(orderMapper.findByCustomerId(customerId));
+        return Result.success(baseMapper.findByCustomerId(customerId));
     }
 
     @Override
     public Result<List<Order>> lowDepositOrders() {
-        return Result.success(orderMapper.findLowDepositOrders());
+        return Result.success(baseMapper.findLowDepositOrders());
     }
 
     @Override
     public Result<List<Map<String, Object>>> recommendRooms(Long customerId, LocalDateTime checkIn, LocalDateTime checkOut) {
         String ci = checkIn.format(DATETIME_FMT);
         String co = checkOut.format(DATETIME_FMT);
-        List<Room> available = orderMapper.findAvailableRooms(ci, co);
-        Customer customer = customerId != null ? customerMapper.findById(customerId) : null;
+        List<Room> available = baseMapper.findAvailableRooms(ci, co);
+        Customer customer = customerId != null ? customerMapper.selectById(customerId) : null;
 
         String prefFloor = null;
         if (customer != null && customer.getTags() != null) {
@@ -552,11 +552,11 @@ public class OrderServiceImpl implements OrderService {
     @Transactional
     public int cancelExpiredPendingOrders() {
         LocalDateTime threshold = LocalDateTime.now().minusHours(2);
-        List<Order> expiredOrders = orderMapper.findExpiredPendingOrders(threshold.format(DATETIME_FMT));
+        List<Order> expiredOrders = baseMapper.findExpiredPendingOrders(threshold.format(DATETIME_FMT));
         int count = 0;
         for (Order order : expiredOrders) {
             order.setStatus(OrderStatus.CANCELLED);
-            orderMapper.update(order);
+            updateById(order);
             count++;
         }
         return count;
@@ -585,7 +585,7 @@ public class OrderServiceImpl implements OrderService {
             end = endDate.plusDays(1).format(DATE_FMT);
         }
 
-        List<Map<String, Object>> dbResult = orderMapper.statsByDateRange(start, end);
+        List<Map<String, Object>> dbResult = baseMapper.statsByDateRange(start, end);
         Map<String, BigDecimal> roomAmountMap = new HashMap<>();
         Map<String, BigDecimal> extraAmountMap = new HashMap<>();
         Map<String, BigDecimal> amountMap = new HashMap<>();
@@ -644,9 +644,9 @@ public class OrderServiceImpl implements OrderService {
 
     private synchronized String generateOrderNo() {
         String prefix = "JC" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-        int count = orderMapper.countByOrderNoPrefix(prefix);
+        int count = baseMapper.countByOrderNoPrefix(prefix);
         String orderNo = prefix + String.format("%03d", count + 1);
-        while (orderMapper.findByOrderNo(orderNo) != null) {
+        while (baseMapper.findByOrderNo(orderNo) != null) {
             count++;
             orderNo = prefix + String.format("%03d", count + 1);
         }

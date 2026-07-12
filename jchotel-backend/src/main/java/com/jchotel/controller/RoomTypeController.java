@@ -17,7 +17,7 @@ public class RoomTypeController {
 
     @GetMapping
     public Result<List<RoomType>> list() {
-        return roomTypeService.list();
+        return roomTypeService.listAll();
     }
 
     @PostMapping

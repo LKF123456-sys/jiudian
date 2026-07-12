@@ -1,12 +1,12 @@
 package com.jchotel.service.impl;
 
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.jchotel.dto.PageQuery;
 import com.jchotel.dto.PageResult;
 import com.jchotel.entity.ChargeItem;
 import com.jchotel.mapper.ChargeItemMapper;
 import com.jchotel.service.ChargeItemService;
 import com.jchotel.utils.Result;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,10 +14,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @Service
-public class ChargeItemServiceImpl implements ChargeItemService {
-
-    @Autowired
-    private ChargeItemMapper chargeItemMapper;
+public class ChargeItemServiceImpl extends ServiceImpl<ChargeItemMapper, ChargeItem> implements ChargeItemService {
 
     private void initPage(PageQuery query) {
         if (query.getPage() == null || query.getPage() < 1) {
@@ -32,8 +29,8 @@ public class ChargeItemServiceImpl implements ChargeItemService {
     @Override
     public Result<PageResult<ChargeItem>> list(PageQuery query) {
         initPage(query);
-        Long total = chargeItemMapper.count(query);
-        List<ChargeItem> list = chargeItemMapper.findList(query);
+        Long total = baseMapper.count(query);
+        List<ChargeItem> list = baseMapper.findList(query);
         PageResult<ChargeItem> pageResult = new PageResult<>();
         pageResult.setTotal(total);
         pageResult.setList(list);
@@ -42,7 +39,7 @@ public class ChargeItemServiceImpl implements ChargeItemService {
 
     @Override
     public Result<List<ChargeItem>> listAllEnabled() {
-        List<ChargeItem> list = chargeItemMapper.findAllEnabled();
+        List<ChargeItem> list = baseMapper.findAllEnabled();
         return Result.success(list);
     }
 
@@ -61,7 +58,7 @@ public class ChargeItemServiceImpl implements ChargeItemService {
         if (item.getSort() == null) {
             item.setSort(0);
         }
-        chargeItemMapper.insert(item);
+        save(item);
         return Result.success("新增成功", item);
     }
 
@@ -71,7 +68,7 @@ public class ChargeItemServiceImpl implements ChargeItemService {
         if (item.getId() == null) {
             return Result.error("ID不能为空");
         }
-        ChargeItem existing = chargeItemMapper.findById(item.getId());
+        ChargeItem existing = getById(item.getId());
         if (existing == null) {
             return Result.error("消费项目不存在");
         }
@@ -81,24 +78,24 @@ public class ChargeItemServiceImpl implements ChargeItemService {
         if (item.getPrice() == null || item.getPrice().compareTo(BigDecimal.ZERO) < 0) {
             return Result.error("价格不能为负数");
         }
-        chargeItemMapper.update(item);
+        updateById(item);
         return Result.success("修改成功", null);
     }
 
     @Override
     @Transactional
     public Result delete(Long id) {
-        ChargeItem existing = chargeItemMapper.findById(id);
+        ChargeItem existing = getById(id);
         if (existing == null) {
             return Result.error("消费项目不存在");
         }
-        chargeItemMapper.deleteById(id);
+        removeById(id);
         return Result.success("删除成功", null);
     }
 
     @Override
     public Result<ChargeItem> detail(Long id) {
-        ChargeItem item = chargeItemMapper.findById(id);
+        ChargeItem item = getById(id);
         if (item == null) {
             return Result.error("消费项目不存在");
         }

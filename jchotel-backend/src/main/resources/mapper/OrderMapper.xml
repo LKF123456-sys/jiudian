@@ -78,31 +78,6 @@
         </where>
     </select>
 
-    <update id="update">
-        UPDATE t_order
-        <set>
-            <if test="orderNo != null">order_no = #{orderNo},</if>
-            <if test="customerId != null">customer_id = #{customerId},</if>
-            <if test="roomId != null">room_id = #{roomId},</if>
-            <if test="userId != null">user_id = #{userId},</if>
-            <if test="checkInTime != null">check_in_time = #{checkInTime},</if>
-            <if test="expectedCheckOutTime != null">expected_check_out_time = #{expectedCheckOutTime},</if>
-            <if test="actualCheckOutTime != null">actual_check_out_time = #{actualCheckOutTime},</if>
-            <if test="deposit != null">deposit = #{deposit},</if>
-            <if test="depositRefunded != null">deposit_refunded = #{depositRefunded},</if>
-            <if test="roomAmount != null">room_amount = #{roomAmount},</if>
-            <if test="extraAmount != null">extra_amount = #{extraAmount},</if>
-            <if test="totalAmount != null">total_amount = #{totalAmount},</if>
-            <if test="roomChanged != null">room_changed = #{roomChanged},</if>
-            <if test="originalRoomId != null">original_room_id = #{originalRoomId},</if>
-            <if test="parentOrderId != null">parent_order_id = #{parentOrderId},</if>
-            <if test="channel != null">channel = #{channel},</if>
-            <if test="status != null">status = #{status},</if>
-            <if test="remark != null">remark = #{remark}</if>
-        </set>
-        WHERE id = #{id}
-    </update>
-
     <select id="statsByDateRange" resultType="java.util.HashMap">
         SELECT DATE(actual_check_out_time) as date, IFNULL(SUM(room_amount), 0) as roomAmount,
                IFNULL(SUM(extra_amount), 0) as extraAmount, IFNULL(SUM(total_amount), 0) as amount, COUNT(*) as count

@@ -52,7 +52,7 @@ public class InvoiceController {
             invoice.setAmount(new java.math.BigDecimal(body.get("amount").toString()));
         }
         Long userId = (Long) request.getAttribute("userId");
-        User user = userMapper.findById(userId);
+        User user = userMapper.selectById(userId);
         String operatorName = user != null ? user.getRealName() : null;
         return invoiceService.create(orderId, invoice, userId, operatorName);
     }

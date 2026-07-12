@@ -1,5 +1,6 @@
 package com.jchotel.service.impl;
 
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.jchotel.constants.OrderStatus;
 import com.jchotel.entity.Order;
 import com.jchotel.entity.OrderItem;
@@ -16,10 +17,7 @@ import java.math.RoundingMode;
 import java.util.List;
 
 @Service
-public class OrderItemServiceImpl implements OrderItemService {
-
-    @Autowired
-    private OrderItemMapper orderItemMapper;
+public class OrderItemServiceImpl extends ServiceImpl<OrderItemMapper, OrderItem> implements OrderItemService {
 
     @Autowired
     private OrderMapper orderMapper;
@@ -27,7 +25,7 @@ public class OrderItemServiceImpl implements OrderItemService {
     @Override
     @Transactional
     public Result addItem(Long orderId, OrderItem item, Long operatorId) {
-        Order order = orderMapper.findById(orderId);
+        Order order = orderMapper.selectById(orderId);
         if (order == null) {
             return Result.error("订单不存在");
         }
@@ -46,14 +44,14 @@ public class OrderItemServiceImpl implements OrderItemService {
         item.setOrderNo(order.getOrderNo());
         item.setAmount(amount);
         item.setOperatorId(operatorId);
-        orderItemMapper.insert(item);
+        save(item);
 
-        BigDecimal extraAmount = orderItemMapper.sumByOrderId(orderId);
+        BigDecimal extraAmount = baseMapper.sumByOrderId(orderId);
         if (extraAmount == null) extraAmount = BigDecimal.ZERO;
         BigDecimal roomAmount = order.getRoomAmount() != null ? order.getRoomAmount() : BigDecimal.ZERO;
         order.setExtraAmount(extraAmount.setScale(2, RoundingMode.HALF_UP));
         order.setTotalAmount(roomAmount.add(extraAmount).setScale(2, RoundingMode.HALF_UP));
-        orderMapper.update(order);
+        orderMapper.updateById(order);
 
         return Result.success("添加消费项成功", item);
     }
@@ -61,20 +59,20 @@ public class OrderItemServiceImpl implements OrderItemService {
     @Override
     @Transactional
     public Result removeItem(Long itemId) {
-        OrderItem item = orderItemMapper.findById(itemId);
+        OrderItem item = getById(itemId);
         if (item == null) {
             return Result.error("消费项不存在");
         }
-        Order order = orderMapper.findById(item.getOrderId());
-        orderItemMapper.deleteById(itemId);
+        Order order = orderMapper.selectById(item.getOrderId());
+        removeById(itemId);
 
         if (order != null && OrderStatus.CHECKED_IN.equals(order.getStatus())) {
-            BigDecimal extraAmount = orderItemMapper.sumByOrderId(order.getId());
+            BigDecimal extraAmount = baseMapper.sumByOrderId(order.getId());
             if (extraAmount == null) extraAmount = BigDecimal.ZERO;
             BigDecimal roomAmount = order.getRoomAmount() != null ? order.getRoomAmount() : BigDecimal.ZERO;
             order.setExtraAmount(extraAmount.setScale(2, RoundingMode.HALF_UP));
             order.setTotalAmount(roomAmount.add(extraAmount).setScale(2, RoundingMode.HALF_UP));
-            orderMapper.update(order);
+            orderMapper.updateById(order);
         }
 
         return Result.success("删除成功", null);
@@ -82,13 +80,13 @@ public class OrderItemServiceImpl implements OrderItemService {
 
     @Override
     public Result<List<OrderItem>> listByOrder(Long orderId) {
-        List<OrderItem> list = orderItemMapper.findByOrderId(orderId);
+        List<OrderItem> list = baseMapper.findByOrderId(orderId);
         return Result.success(list);
     }
 
     @Override
     public Result<BigDecimal> getTotalExtra(Long orderId) {
-        BigDecimal total = orderItemMapper.sumByOrderId(orderId);
+        BigDecimal total = baseMapper.sumByOrderId(orderId);
         return Result.success(total != null ? total : BigDecimal.ZERO);
     }
 }

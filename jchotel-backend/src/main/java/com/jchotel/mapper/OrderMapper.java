@@ -1,16 +1,20 @@
 package com.jchotel.mapper;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.jchotel.dto.PageQuery;
 import com.jchotel.entity.Order;
 import com.jchotel.entity.Room;
-import org.apache.ibatis.annotations.*;
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
 @Mapper
-public interface OrderMapper {
+public interface OrderMapper extends BaseMapper<Order> {
 
     List<Order> findList(PageQuery query);
 
@@ -20,26 +24,15 @@ public interface OrderMapper {
             "FROM t_order o LEFT JOIN t_customer c ON o.customer_id = c.id " +
             "LEFT JOIN t_room r ON o.room_id = r.id LEFT JOIN t_room_type rt ON r.type_id = rt.id " +
             "LEFT JOIN sys_user u ON o.user_id = u.id WHERE o.id = #{id}")
-    Order findById(Long id);
+    Order findDetailById(@Param("id") Long id);
 
     @Select("SELECT o.*, c.name as customer_name, r.room_no FROM t_order o " +
             "LEFT JOIN t_customer c ON o.customer_id = c.id " +
             "LEFT JOIN t_room r ON o.room_id = r.id WHERE o.order_no = #{orderNo}")
-    Order findByOrderNo(String orderNo);
-
-    @Insert("INSERT INTO t_order(order_no, customer_id, room_id, user_id, check_in_time, expected_check_out_time, " +
-            "actual_check_out_time, deposit, deposit_refunded, room_amount, extra_amount, total_amount, " +
-            "room_changed, original_room_id, parent_order_id, channel, status, remark) " +
-            "VALUES(#{orderNo}, #{customerId}, #{roomId}, #{userId}, #{checkInTime}, #{expectedCheckOutTime}, " +
-            "#{actualCheckOutTime}, #{deposit}, #{depositRefunded}, #{roomAmount}, #{extraAmount}, #{totalAmount}, " +
-            "#{roomChanged}, #{originalRoomId}, #{parentOrderId}, #{channel}, #{status}, #{remark})")
-    @Options(useGeneratedKeys = true, keyProperty = "id")
-    int insert(Order order);
-
-    int update(Order order);
+    Order findByOrderNo(@Param("orderNo") String orderNo);
 
     @Select("SELECT COUNT(*) FROM t_order WHERE order_no LIKE CONCAT(#{prefix}, '%')")
-    int countByOrderNoPrefix(String prefix);
+    int countByOrderNoPrefix(@Param("prefix") String prefix);
 
     @Select("SELECT IFNULL(SUM(total_amount), 0) FROM t_order WHERE status = 'checkedOut' AND DATE(actual_check_out_time) = CURDATE()")
     BigDecimal todayRevenue();
@@ -62,7 +55,7 @@ public interface OrderMapper {
     List<Map<String, Object>> statsByDateRange(@Param("startTime") String startTime, @Param("endTime") String endTime);
 
     @Select("SELECT COUNT(*) FROM t_order WHERE customer_id = #{customerId} AND status IN ('pending', 'checkedIn')")
-    int countActiveByCustomerId(Long customerId);
+    int countActiveByCustomerId(@Param("customerId") Long customerId);
 
     @Select("SELECT COUNT(*) FROM t_order WHERE room_id = #{roomId} AND status IN ('pending', 'checkedIn') AND check_in_time < #{expectedCheckOutTime} AND expected_check_out_time > #{checkInTime}")
     int countConflictOrders(@Param("roomId") Long roomId, @Param("checkInTime") String checkInTime, @Param("expectedCheckOutTime") String expectedCheckOutTime);
@@ -86,7 +79,7 @@ public interface OrderMapper {
 
     List<Order> findTodayDepartures();
 
-    List<Order> findByCustomerId(Long customerId);
+    List<Order> findByCustomerId(@Param("customerId") Long customerId);
 
     List<Order> findLowDepositOrders();
 

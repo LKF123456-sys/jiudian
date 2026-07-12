@@ -43,14 +43,4 @@
             </if>
         </where>
     </select>
-
-    <update id="update">
-        UPDATE sys_user
-        <set>
-            <if test="realName != null">real_name = #{realName},</if>
-            <if test="role != null">role = #{role},</if>
-            <if test="status != null">status = #{status}</if>
-        </set>
-        WHERE id = #{id}
-    </update>
 </mapper>

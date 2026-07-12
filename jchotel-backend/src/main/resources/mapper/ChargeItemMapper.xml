@@ -39,17 +39,4 @@
         </where>
     </select>
 
-    <update id="update">
-        UPDATE t_charge_item
-        <set>
-            <if test="name != null">name = #{name},</if>
-            <if test="category != null">category = #{category},</if>
-            <if test="price != null">price = #{price},</if>
-            <if test="unit != null">unit = #{unit},</if>
-            <if test="status != null">status = #{status},</if>
-            <if test="sort != null">sort = #{sort}</if>
-        </set>
-        WHERE id = #{id}
-    </update>
-
 </mapper>

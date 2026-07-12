@@ -1,5 +1,6 @@
 package com.jchotel.service;
 
+import com.baomidou.mybatisplus.extension.service.IService;
 import com.jchotel.dto.LoginDTO;
 import com.jchotel.dto.PageQuery;
 import com.jchotel.dto.PageResult;
@@ -10,7 +11,7 @@ import com.jchotel.utils.Result;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
 
-public interface UserService {
+public interface UserService extends IService<User> {
     Result<Map<String, Object>> login(LoginDTO loginDTO);
     Result<User> info(HttpServletRequest request);
     Result<String> changePassword(PasswordDTO passwordDTO, HttpServletRequest request);

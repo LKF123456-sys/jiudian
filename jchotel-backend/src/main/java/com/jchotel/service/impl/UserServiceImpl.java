@@ -1,5 +1,6 @@
 package com.jchotel.service.impl;
 
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.jchotel.constants.UserRole;
 import com.jchotel.constants.VipConfig;
 import com.jchotel.dto.LoginDTO;
@@ -22,10 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-public class UserServiceImpl implements UserService {
-
-    @Autowired
-    private UserMapper userMapper;
+public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
 
     @Autowired
     private JwtUtil jwtUtil;
@@ -42,7 +40,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Result<Map<String, Object>> login(LoginDTO loginDTO) {
-        User user = userMapper.findByUsername(loginDTO.getUsername());
+        User user = baseMapper.findByUsername(loginDTO.getUsername());
         if (user == null) {
             return Result.error("用户名或密码错误");
         }
@@ -59,7 +57,7 @@ public class UserServiceImpl implements UserService {
             if (failCount >= VipConfig.MAX_LOGIN_FAILS) {
                 lockedUntil = LocalDateTime.now().plusMinutes(VipConfig.LOCK_MINUTES);
             }
-            userMapper.updateLoginFail(user.getId(), failCount, lockedUntil);
+            baseMapper.updateLoginFail(user.getId(), failCount, lockedUntil);
             if (failCount >= VipConfig.MAX_LOGIN_FAILS) {
                 return Result.error("密码错误次数过多，账号已锁定" + VipConfig.LOCK_MINUTES + "分钟");
             }
@@ -67,10 +65,10 @@ public class UserServiceImpl implements UserService {
         }
 
         if (PasswordUtil.needsUpgrade(user.getPassword())) {
-            userMapper.updatePassword(user.getId(), PasswordUtil.encode(loginDTO.getPassword()));
+            baseMapper.updatePassword(user.getId(), PasswordUtil.encode(loginDTO.getPassword()));
         }
 
-        userMapper.updateLoginSuccess(user.getId());
+        baseMapper.updateLoginSuccess(user.getId());
 
         String role = user.getRole() != null ? user.getRole() : UserRole.RECEPTIONIST;
         String token = jwtUtil.generateToken(user.getId(), user.getUsername(), role);
@@ -91,7 +89,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public Result<User> info(HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("userId");
-        User user = userMapper.findById(userId);
+        User user = getById(userId);
         if (user == null) {
             return Result.error("用户不存在");
         }
@@ -102,22 +100,22 @@ public class UserServiceImpl implements UserService {
     @Override
     public Result<String> changePassword(PasswordDTO passwordDTO, HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("userId");
-        User user = userMapper.findById(userId);
+        User user = getById(userId);
         if (user == null) {
             return Result.error("用户不存在");
         }
         if (!PasswordUtil.matches(passwordDTO.getOldPassword(), user.getPassword())) {
             return Result.error("原密码错误");
         }
-        userMapper.updatePassword(userId, PasswordUtil.encode(passwordDTO.getNewPassword()));
+        baseMapper.updatePassword(userId, PasswordUtil.encode(passwordDTO.getNewPassword()));
         return Result.success("密码修改成功", null);
     }
 
     @Override
     public Result<PageResult<User>> list(PageQuery query) {
         initPage(query);
-        Long total = userMapper.count(query);
-        List<User> list = userMapper.findList(query);
+        Long total = baseMapper.count(query);
+        List<User> list = baseMapper.findList(query);
         list.forEach(u -> u.setPassword(null));
         PageResult<User> pageResult = new PageResult<>();
         pageResult.setTotal(total);
@@ -127,7 +125,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Result<User> detail(Long id) {
-        User user = userMapper.findById(id);
+        User user = getById(id);
         if (user == null) {
             return Result.error("用户不存在");
         }
@@ -137,7 +135,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Result<String> add(User user) {
-        User existing = userMapper.findByUsername(user.getUsername());
+        User existing = baseMapper.findByUsername(user.getUsername());
         if (existing != null) {
             return Result.error("用户名已存在");
         }
@@ -148,24 +146,24 @@ public class UserServiceImpl implements UserService {
         if (user.getRole() == null || user.getRole().isEmpty()) {
             user.setRole(UserRole.RECEPTIONIST);
         }
-        userMapper.insert(user);
+        save(user);
         return Result.success("新增成功，默认密码：123456", null);
     }
 
     @Override
     public Result<String> update(User user) {
-        User existing = userMapper.findByUsername(user.getUsername());
+        User existing = baseMapper.findByUsername(user.getUsername());
         if (existing != null && !existing.getId().equals(user.getId())) {
             return Result.error("用户名已存在");
         }
-        User target = userMapper.findById(user.getId());
+        User target = getById(user.getId());
         if (target == null) {
             return Result.error("用户不存在");
         }
         if (UserRole.ADMIN.equals(target.getRole()) && user.getRole() != null && !UserRole.ADMIN.equals(user.getRole())) {
             return Result.error("不能修改超级管理员角色");
         }
-        userMapper.update(user);
+        updateById(user);
         return Result.success("修改成功", null);
     }
 
@@ -175,14 +173,14 @@ public class UserServiceImpl implements UserService {
         if (currentUserId.equals(id)) {
             return Result.error("不能删除当前登录的自己");
         }
-        User target = userMapper.findById(id);
+        User target = getById(id);
         if (target == null) {
             return Result.error("用户不存在");
         }
         if (UserRole.ADMIN.equals(target.getRole())) {
             return Result.error("不能删除超级管理员");
         }
-        userMapper.deleteById(id);
+        removeById(id);
         return Result.success("删除成功", null);
     }
 
@@ -192,24 +190,24 @@ public class UserServiceImpl implements UserService {
         if (currentUserId.equals(id)) {
             return Result.error("不能禁用自己的账号");
         }
-        User target = userMapper.findById(id);
+        User target = getById(id);
         if (target == null) {
             return Result.error("用户不存在");
         }
         if (UserRole.ADMIN.equals(target.getRole()) && status == 0) {
             return Result.error("不能禁用超级管理员");
         }
-        userMapper.updateStatus(id, status);
+        baseMapper.updateStatus(id, status);
         return Result.success(status == 1 ? "已启用" : "已禁用", null);
     }
 
     @Override
     public Result<String> resetPassword(Long id) {
-        User target = userMapper.findById(id);
+        User target = getById(id);
         if (target == null) {
             return Result.error("用户不存在");
         }
-        userMapper.updatePassword(id, PasswordUtil.encode("123456"));
+        baseMapper.updatePassword(id, PasswordUtil.encode("123456"));
         return Result.success("密码已重置为：123456", null);
     }
 }
