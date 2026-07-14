@@ -1,7 +1,6 @@
 package com.jchotel.config; // 定义包名，config包存放配置类
 
 // Spring框架核心注解
-import org.springframework.beans.factory.annotation.Autowired; // 自动注入注解
 import org.springframework.context.annotation.Configuration; // 配置类注解
 // Spring MVC配置相关
 import org.springframework.web.servlet.config.annotation.CorsRegistry; // 跨域配置注册器
@@ -20,8 +19,11 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer; // Sp
 @Configuration // 标记这是一个Spring配置类，替代XML配置文件
 public class WebConfig implements WebMvcConfigurer { // 实现WebMvcConfigurer接口以自定义MVC配置
 
-    @Autowired // Spring自动注入登录拦截器实例
-    private LoginInterceptor loginInterceptor; // 登录拦截器，用于处理权限验证
+    private final LoginInterceptor loginInterceptor;
+
+    public WebConfig(LoginInterceptor loginInterceptor) {
+        this.loginInterceptor = loginInterceptor;
+    }
 
     /**
      * 添加拦截器配置
