@@ -38,6 +38,12 @@
                 AND (c.name LIKE CONCAT('%', #{keyword}, '%') OR i.invoice_no LIKE CONCAT('%', #{keyword}, '%')
                      OR i.order_no LIKE CONCAT('%', #{keyword}, '%') OR i.title LIKE CONCAT('%', #{keyword}, '%'))
             </if>
+            <if test="startTime != null and startTime != ''">
+                AND DATE(i.create_time) &gt;= #{startTime}
+            </if>
+            <if test="endTime != null and endTime != ''">
+                AND DATE(i.create_time) &lt;= #{endTime}
+            </if>
         </where>
         ORDER BY i.create_time DESC
         LIMIT #{offset}, #{size}
@@ -58,7 +64,12 @@
                 AND (c.name LIKE CONCAT('%', #{keyword}, '%') OR i.invoice_no LIKE CONCAT('%', #{keyword}, '%')
                      OR i.order_no LIKE CONCAT('%', #{keyword}, '%') OR i.title LIKE CONCAT('%', #{keyword}, '%'))
             </if>
+            <if test="startTime != null and startTime != ''">
+                AND DATE(i.create_time) &gt;= #{startTime}
+            </if>
+            <if test="endTime != null and endTime != ''">
+                AND DATE(i.create_time) &lt;= #{endTime}
+            </if>
         </where>
     </select>
-
 </mapper>

@@ -51,6 +51,13 @@ public interface OrderService extends IService<Order> {
     Result<Order> detail(Long id);
 
     /**
+     * 按订单号查询订单
+     * @param orderNo 订单号
+     * @return 订单详细信息
+     */
+    Result<Order> getByOrderNo(String orderNo);
+
+    /**
      * 办理入住登记
      * 选择房间、登记客户信息、收取押金、生成入住订单、更新房间状态为入住中
      * @param checkinDTO 入住信息，包含客户信息、房间ID、入住天数、押金等

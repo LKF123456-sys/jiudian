@@ -106,8 +106,8 @@
           <el-input v-model="assignForm.roomNo" disabled></el-input>
         </el-form-item>
         <el-form-item label="分配给" required>
-          <el-select v-model="assignForm.assigneeId" placeholder="请选择保洁人员" style="width: 100%;" filterable>
-            <el-option v-for="u in housekeepingUsers" :key="u.id" :label="u.name" :value="u.id"></el-option>
+          <el-select v-model="assignForm.assigneeId" placeholder="请选择保洁人员" style="width: 100%;" filterable @change="handleAssigneeChange">
+            <el-option v-for="u in housekeepingUsers" :key="u.id" :label="u.realName || u.username" :value="u.id"></el-option>
           </el-select>
         </el-form-item>
         <el-form-item label="备注">
@@ -149,6 +149,7 @@ const assignForm = reactive({
   id: null,
   roomNo: '',
   assigneeId: null,
+  assigneeName: '',
   remark: ''
 })
 
@@ -207,10 +208,16 @@ function handlePageChange(page) {
   loadList()
 }
 
+function handleAssigneeChange(userId) {
+  const selected = housekeepingUsers.value.find(u => u.id === userId)
+  assignForm.assigneeName = selected ? (selected.realName || selected.username) : ''
+}
+
 function openAssignDialog(row) {
   assignForm.id = row.id
   assignForm.roomNo = row.roomNo
   assignForm.assigneeId = null
+  assignForm.assigneeName = ''
   assignForm.remark = row.remark || ''
   assignDialogVisible.value = true
 }
@@ -223,6 +230,7 @@ function submitAssign() {
   submitLoading.value = true
   assignCleaningTask(assignForm.id, {
     assigneeId: assignForm.assigneeId,
+    assigneeName: assignForm.assigneeName,
     remark: assignForm.remark
   }).then(() => {
     ElMessage.success('分配成功')

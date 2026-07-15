@@ -268,7 +268,7 @@ public interface OrderMapper extends BaseMapper<Order> {
      * @param endTime 结束时间
      * @return 各支付方式的统计结果（支付方式、总金额）
      */
-    @Select("SELECT payment_method, IFNULL(SUM(amount), 0) as total FROM t_payment WHERE type IN ('pay','deposit') AND create_time >= #{startTime} AND create_time < #{endTime} GROUP BY payment_method") // 按支付方式统计收款
+    @Select("SELECT payment_method, IFNULL(SUM(amount), 0) as total, COUNT(*) as cnt FROM t_payment WHERE type IN ('pay','deposit') AND create_time >= #{startTime} AND create_time < #{endTime} GROUP BY payment_method") // 按支付方式统计收款
     List<Map<String, Object>> paymentMethodStats(@Param("startTime") String startTime, @Param("endTime") String endTime); // @Param指定开始/结束时间
 
     /**
@@ -280,11 +280,12 @@ public interface OrderMapper extends BaseMapper<Order> {
      * @param endTime 结束时间
      * @return 各房型营收统计（房型名、金额、订单数）
      */
-    @Select("SELECT rt.name as roomType, IFNULL(SUM(o.total_amount), 0) as amount, COUNT(*) as count " + // 查询房型名、总金额、订单数
-            "FROM t_order o LEFT JOIN t_room r ON o.room_id = r.id LEFT JOIN t_room_type rt ON r.type_id = rt.id " + // 订单表关联房间表再关联房型表
-            "WHERE o.status = 'checkedOut' AND o.actual_check_out_time >= #{startTime} AND o.actual_check_out_time < #{endTime} " + // 条件：已退房且在日期范围内
-            "GROUP BY rt.id ORDER BY amount DESC") // 按房型分组，按金额倒序
-    List<Map<String, Object>> roomTypeRevenueStats(@Param("startTime") String startTime, @Param("endTime") String endTime); // @Param指定开始/结束时间
+    @Select("SELECT rt.id as roomTypeId, rt.name as roomTypeName, IFNULL(SUM(o.total_amount), 0) as amount, COUNT(*) as nights, " +
+            "(SELECT COUNT(*) FROM t_room r2 WHERE r2.type_id = rt.id) as roomCount " +
+            "FROM t_order o LEFT JOIN t_room r ON o.room_id = r.id LEFT JOIN t_room_type rt ON r.type_id = rt.id " +
+            "WHERE o.status = 'checkedOut' AND o.actual_check_out_time >= #{startTime} AND o.actual_check_out_time < #{endTime} " +
+            "GROUP BY rt.id ORDER BY amount DESC")
+    List<Map<String, Object>> roomTypeRevenueStats(@Param("startTime") String startTime, @Param("endTime") String endTime);
 
     /**
      * 统计平均日均房价

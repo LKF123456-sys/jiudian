@@ -1,8 +1,10 @@
 package com.jchotel.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -48,7 +50,7 @@ public class Invoice {
     /** 发票类型，对应数据库列type，如"增值税普通发票"、"增值税专用发票"等 */
     private String type;
 
-    /** 发票状态，对应数据库列status，取值：pending-待开具，issued-已开具，cancelled-已作废 */
+    /** 发票状态，对应数据库列status，取值：issued-已开具，cancelled-已作废，red-已红冲 */
     private String status;
 
     /** 发票内容，对应数据库列content，如"住宿费"、"餐饮费"等开票项目 */
@@ -63,9 +65,17 @@ public class Invoice {
     /** 操作员姓名，对应数据库列operator_name，冗余存储便于展示 */
     private String operatorName;
 
-    /** 创建时间，对应数据库列create_time，记录开票申请时间 */
+    /** 创建时间/开票时间，对应数据库列create_time，记录开票时间 */
     private LocalDateTime createTime;
 
-    /** 作废时间，对应数据库列cancel_time，记录发票作废的时间 */
+    /** 作废时间，对应数据库列cancel_time，记录发票作废/红冲的时间 */
     private LocalDateTime cancelTime;
+
+    /**
+     * 获取开票时间（兼容前端字段名issueTime）
+     * @return 开票时间
+     */
+    public LocalDateTime getIssueTime() {
+        return createTime;
+    }
 }

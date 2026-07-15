@@ -2,6 +2,7 @@ import request from './request'
 
 export const listOrders = params => request.get('/orders', { params })
 export const getOrder = id => request.get(`/orders/${id}`)
+export const getOrderByOrderNo = orderNo => request.get(`/orders/no/${orderNo}`)
 export const checkin = data => request.post('/orders/checkin', data)
 export const checkout = (id, data) => request.post(`/orders/${id}/checkout`, data)
 export const cancelOrder = id => request.post(`/orders/${id}/cancel`)

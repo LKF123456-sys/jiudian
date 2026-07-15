@@ -129,9 +129,14 @@ const dialogTitle = computed(() => isEdit.value ? '编辑项目' : '新增项目
 
 function loadList() {
   loading.value = true
-  const params = { ...query }
-  if (params.status !== '' && params.status !== null && params.status !== undefined) {
-    params.enabled = params.status
+  const params = {
+    page: query.page,
+    size: query.size,
+    keyword: query.keyword || undefined,
+    category: query.category || undefined
+  }
+  if (query.status !== '' && query.status !== null && query.status !== undefined) {
+    params.status = query.status
   }
   listChargeItems(params).then(data => {
     list.value = data?.list || []

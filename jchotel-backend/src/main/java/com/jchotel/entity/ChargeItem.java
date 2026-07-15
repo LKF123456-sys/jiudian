@@ -1,8 +1,10 @@
 package com.jchotel.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -34,11 +36,31 @@ public class ChargeItem {
     private String unit;
 
     /** 状态，对应数据库列status，取值：0-禁用，1-启用 */
+    @JsonIgnore // 序列化时忽略此字段，使用enabled字段替代
     private Integer status;
 
     /** 排序号，对应数据库列sort，数值越小排序越靠前 */
     private Integer sort;
 
+    /** 备注，对应数据库列remark */
+    private String remark;
+
     /** 创建时间，对应数据库列create_time，记录项目创建时间 */
     private LocalDateTime createTime;
+
+    /**
+     * 获取启用状态（布尔值，用于前端交互）
+     * @return true表示启用，false表示禁用
+     */
+    public Boolean getEnabled() {
+        return status != null && status == 1;
+    }
+
+    /**
+     * 设置启用状态（布尔值，用于前端交互）
+     * @param enabled true表示启用，false表示禁用
+     */
+    public void setEnabled(Boolean enabled) {
+        this.status = enabled != null && enabled ? 1 : 0;
+    }
 }

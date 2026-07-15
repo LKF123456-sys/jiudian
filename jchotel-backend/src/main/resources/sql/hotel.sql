@@ -151,7 +151,7 @@ CREATE TABLE t_cleaning_task (
   order_id BIGINT DEFAULT NULL COMMENT '关联退房订单ID',
   assignee_id BIGINT DEFAULT NULL COMMENT '分配保洁员ID',
   assignee_name VARCHAR(50) DEFAULT NULL COMMENT '保洁员姓名',
-  status VARCHAR(20) NOT NULL DEFAULT 'pending' COMMENT '状态: pending/assigned/cleaning/done/inspected',
+  status VARCHAR(20) NOT NULL DEFAULT 'pending' COMMENT '状态: pending/assigned/cleaning/inspecting/completed/cancelled',
   priority VARCHAR(10) DEFAULT 'normal' COMMENT '优先级: low/normal/high/urgent',
   remark VARCHAR(200) DEFAULT NULL COMMENT '备注',
   finish_time DATETIME DEFAULT NULL COMMENT '完成时间',
@@ -177,7 +177,7 @@ CREATE TABLE t_maintenance_order (
   reporter_name VARCHAR(50) DEFAULT NULL COMMENT '报修人姓名',
   assignee_id BIGINT DEFAULT NULL COMMENT '维修人ID',
   assignee_name VARCHAR(50) DEFAULT NULL COMMENT '维修人姓名',
-  status VARCHAR(20) NOT NULL DEFAULT 'pending' COMMENT '状态: pending/processing/done/verified/cancelled',
+  status VARCHAR(20) NOT NULL DEFAULT 'pending' COMMENT '状态: pending/assigned/processing/completed/verified/cancelled',
   solution VARCHAR(500) DEFAULT NULL COMMENT '维修方案/结果',
   cost DECIMAL(10,2) DEFAULT 0 COMMENT '维修费用',
   finish_time DATETIME DEFAULT NULL COMMENT '完成时间',
@@ -242,6 +242,7 @@ CREATE TABLE t_charge_item (
   unit VARCHAR(20) DEFAULT '个' COMMENT '单位',
   status TINYINT DEFAULT 1 COMMENT '状态：1启用/0停用',
   sort INT DEFAULT 0 COMMENT '排序',
+  remark VARCHAR(255) DEFAULT NULL COMMENT '备注',
   create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='收费项目字典';

@@ -94,6 +94,10 @@ public class ChargeItemServiceImpl extends ServiceImpl<ChargeItemMapper, ChargeI
         if (item.getSort() == null) {
             item.setSort(0);
         }
+        // 默认单位为"个"
+        if (item.getUnit() == null || item.getUnit().trim().isEmpty()) {
+            item.setUnit("个");
+        }
         save(item);
         return Result.success("新增成功", item);
     }
@@ -110,6 +114,12 @@ public class ChargeItemServiceImpl extends ServiceImpl<ChargeItemMapper, ChargeI
         ChargeItem existing = getById(item.getId());
         if (existing == null) {
             return Result.error("消费项目不存在");
+        }
+        // 如果只更新enabled状态，其他字段保持不变
+        if (item.getName() == null && item.getPrice() == null && item.getEnabled() != null) {
+            existing.setEnabled(item.getEnabled());
+            updateById(existing);
+            return Result.success("修改成功", null);
         }
         if (item.getName() == null || item.getName().trim().isEmpty()) {
             return Result.error("项目名称不能为空");

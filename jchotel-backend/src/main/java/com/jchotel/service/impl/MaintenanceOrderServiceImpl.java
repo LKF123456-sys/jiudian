@@ -93,7 +93,16 @@ public class MaintenanceOrderServiceImpl extends ServiceImpl<MaintenanceOrderMap
         if (order.getRoomId() == null) return Result.error("请选择房间");
         Room room = roomMapper.selectById(order.getRoomId());
         if (room == null) return Result.error("房间不存在");
-        if (order.getTitle() == null || order.getTitle().trim().isEmpty()) return Result.error("维修标题不能为空");
+        // 如果title为空，使用description作为title
+        if (order.getTitle() == null || order.getTitle().trim().isEmpty()) {
+            if (order.getDescription() != null && !order.getDescription().trim().isEmpty()) {
+                // 截取描述前50个字符作为标题
+                String desc = order.getDescription().trim();
+                order.setTitle(desc.length() > 50 ? desc.substring(0, 50) + "..." : desc);
+            } else {
+                return Result.error("问题描述不能为空");
+            }
+        }
 
         // 生成唯一工单号
         order.setOrderNo(generateOrderNo());

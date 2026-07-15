@@ -146,8 +146,8 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search } from '@element-plus/icons-vue'
-import { listInvoices, createInvoice, cancelInvoice, redInvoice, getInvoicesByOrder } from '@/api/invoice'
-import { getOrder } from '@/api/order'
+import { listInvoices, getInvoice, createInvoice, cancelInvoice, redInvoice } from '@/api/invoice'
+import { getOrderByOrderNo } from '@/api/order'
 import { INVOICE_STATUS_MAP } from '@/utils/constants'
 import { formatDate, formatMoney } from '@/utils/format'
 
@@ -169,8 +169,8 @@ const query = reactive({
   size: 10,
   keyword: '',
   status: '',
-  startDate: '',
-  endDate: ''
+  startTime: '',
+  endTime: ''
 })
 
 const createForm = reactive({
@@ -196,16 +196,24 @@ const actionForm = reactive({
 function loadList() {
   loading.value = true
   if (dateRange.value && dateRange.value.length === 2) {
-    query.startDate = dateRange.value[0]
-    query.endDate = dateRange.value[1]
+    query.startTime = dateRange.value[0]
+    query.endTime = dateRange.value[1]
   } else {
-    query.startDate = ''
-    query.endDate = ''
+    query.startTime = ''
+    query.endTime = ''
   }
-  listInvoices(query).then(data => {
+  const params = {
+    page: query.page,
+    size: query.size,
+    keyword: query.keyword || undefined,
+    status: query.status || undefined,
+    startTime: query.startTime || undefined,
+    endTime: query.endTime || undefined
+  }
+  listInvoices(params).then(data => {
     list.value = data?.list || []
     total.value = data?.total || 0
-    stats.value = data?.stats || {}
+    stats.value = data?.stats || { monthAmount: 0, monthCount: 0, totalAmount: 0 }
   }).catch(() => {
     list.value = []
     total.value = 0
@@ -247,7 +255,7 @@ function queryOrder() {
     ElMessage.warning('请输入订单号')
     return
   }
-  getOrder(createForm.orderNo).then(data => {
+  getOrderByOrderNo(createForm.orderNo.trim()).then(data => {
     orderInfo.value = data
     createForm.orderId = data.id
     createForm.amount = data.totalAmount || 0
@@ -257,6 +265,7 @@ function queryOrder() {
   }).catch(() => {
     orderInfo.value = null
     createForm.orderId = null
+    ElMessage.error('未找到该订单，请确认订单号是否正确')
   })
 }
 

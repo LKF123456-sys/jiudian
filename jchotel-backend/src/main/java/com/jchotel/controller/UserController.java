@@ -27,13 +27,11 @@ import jakarta.servlet.http.HttpServletRequest; // HTTP请求对象
  * 用户管理控制器
  * 负责处理系统用户的管理操作，包括获取当前用户信息、用户CRUD、状态切换、密码重置等
  * URL前缀: /api/user
- * 权限要求：整个控制器仅admin角色可访问（除获取当前用户信息外）
  */
 @RestController // 标记为REST风格控制器，返回值自动序列化为JSON
 @RequestMapping("/api/user") // 设置该控制器的基础请求路径
 @Tag(name = "用户管理") // Swagger文档分组标签
 @SecurityRequirement(name = "Bearer Authentication") // 需要Bearer Token认证
-@RequireRole({"admin"}) // 类级别权限要求：仅管理员角色可访问该控制器所有接口
 public class UserController {
 
     @Autowired // 自动注入用户服务
@@ -74,6 +72,7 @@ public class UserController {
      */
     @Operation(summary = "查询用户详情") // Swagger接口摘要描述
     @GetMapping("/{id}") // 映射GET请求到/{id}路径
+    @RequireRole({"admin"}) // 仅管理员可访问
     public Result<User> detail(@PathVariable Long id) { // 从路径中获取用户ID
         return userService.detail(id); // 调用服务层查询用户详情
     }
@@ -87,6 +86,7 @@ public class UserController {
      */
     @Operation(summary = "新增用户") // Swagger接口摘要描述
     @PostMapping // 映射POST请求到基础路径
+    @RequireRole({"admin"}) // 仅管理员可访问
     public Result<String> add(@RequestBody User user) { // 从请求体中解析用户对象
         return userService.add(user); // 调用服务层新增用户
     }
@@ -101,6 +101,7 @@ public class UserController {
      */
     @Operation(summary = "更新用户") // Swagger接口摘要描述
     @PutMapping("/{id}") // 映射PUT请求到/{id}路径
+    @RequireRole({"admin"}) // 仅管理员可访问
     public Result<String> update(@PathVariable Long id, @RequestBody User user) { // 获取路径ID和请求体中的用户对象
         user.setId(id); // 设置用户ID为路径参数中的ID，确保更新正确的记录
         return userService.update(user); // 调用服务层更新用户
@@ -116,6 +117,7 @@ public class UserController {
      */
     @Operation(summary = "删除用户") // Swagger接口摘要描述
     @DeleteMapping("/{id}") // 映射DELETE请求到/{id}路径
+    @RequireRole({"admin"}) // 仅管理员可访问
     public Result<String> delete(@PathVariable Long id, HttpServletRequest request) { // 获取路径ID和HTTP请求对象
         return userService.delete(id, request); // 调用服务层删除用户
     }
@@ -131,6 +133,7 @@ public class UserController {
      */
     @Operation(summary = "切换用户状态") // Swagger接口摘要描述
     @PutMapping("/{id}/status/{status}") // 映射PUT请求到/{id}/status/{status}路径
+    @RequireRole({"admin"}) // 仅管理员可访问
     public Result<String> toggleStatus(@PathVariable Long id, @PathVariable Integer status, HttpServletRequest request) { // 获取路径中的用户ID和状态值，获取请求对象
         return userService.toggleStatus(id, status, request); // 调用服务层切换用户状态
     }
@@ -144,6 +147,7 @@ public class UserController {
      */
     @Operation(summary = "重置用户密码") // Swagger接口摘要描述
     @PutMapping("/{id}/reset-password") // 映射PUT请求到/{id}/reset-password路径
+    @RequireRole({"admin"}) // 仅管理员可访问
     public Result<String> resetPassword(@PathVariable Long id) { // 从路径中获取用户ID
         return userService.resetPassword(id); // 调用服务层重置用户密码
     }

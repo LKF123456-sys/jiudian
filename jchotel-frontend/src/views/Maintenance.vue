@@ -135,8 +135,8 @@
           <el-input v-model="assignForm.roomNo" disabled></el-input>
         </el-form-item>
         <el-form-item label="分配给" required>
-          <el-select v-model="assignForm.assigneeId" placeholder="请选择维修人员" style="width: 100%;" filterable>
-            <el-option v-for="u in engineeringUsers" :key="u.id" :label="u.name" :value="u.id"></el-option>
+          <el-select v-model="assignForm.assigneeId" placeholder="请选择维修人员" style="width: 100%;" filterable @change="handleAssigneeChange">
+            <el-option v-for="u in engineeringUsers" :key="u.id" :label="u.realName || u.username" :value="u.id"></el-option>
           </el-select>
         </el-form-item>
       </el-form>
@@ -216,7 +216,8 @@ const createRules = {
 const assignForm = reactive({
   id: null,
   roomNo: '',
-  assigneeId: null
+  assigneeId: null,
+  assigneeName: ''
 })
 
 const finishForm = reactive({
@@ -309,10 +310,16 @@ function submitCreate() {
   })
 }
 
+function handleAssigneeChange(userId) {
+  const selected = engineeringUsers.value.find(u => u.id === userId)
+  assignForm.assigneeName = selected ? (selected.realName || selected.username) : ''
+}
+
 function openAssignDialog(row) {
   assignForm.id = row.id
   assignForm.roomNo = row.roomNo
   assignForm.assigneeId = null
+  assignForm.assigneeName = ''
   assignDialogVisible.value = true
 }
 
@@ -322,7 +329,10 @@ function submitAssign() {
     return
   }
   submitLoading.value = true
-  assignMaintenanceOrder(assignForm.id, { assigneeId: assignForm.assigneeId }).then(() => {
+  assignMaintenanceOrder(assignForm.id, {
+    assigneeId: assignForm.assigneeId,
+    assigneeName: assignForm.assigneeName
+  }).then(() => {
     ElMessage.success('分配成功')
     assignDialogVisible.value = false
     loadList()
@@ -333,7 +343,7 @@ function submitAssign() {
 
 function handleStart(row) {
   ElMessageBox.confirm('确认开始维修？', '提示', { type: 'warning' }).then(() => {
-    assignMaintenanceOrder(row.id, { start: true }).then(() => {
+    startMaintenanceOrder(row.id).then(() => {
       ElMessage.success('已开始维修')
       loadList()
     }).catch(() => {})

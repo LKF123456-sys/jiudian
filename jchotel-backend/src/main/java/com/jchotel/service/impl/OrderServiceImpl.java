@@ -243,6 +243,13 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         return Result.success(order);
     }
 
+    @Override
+    public Result<Order> getByOrderNo(String orderNo) {
+        Order order = baseMapper.findByOrderNo(orderNo);
+        if (order == null) return Result.error("订单不存在");
+        return Result.success(order);
+    }
+
     /**
      * 办理入住/预约
      * 支持两种场景：立即入住（30分钟内）直接办理，超过则创建预约订单

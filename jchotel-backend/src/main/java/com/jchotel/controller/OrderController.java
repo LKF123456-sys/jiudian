@@ -75,6 +75,12 @@ public class OrderController {
         return orderService.detail(id); // 调用服务层查询订单详情
     }
 
+    @Operation(summary = "按订单号查询订单")
+    @GetMapping("/no/{orderNo}")
+    public Result<Order> getByOrderNo(@PathVariable String orderNo) {
+        return orderService.getByOrderNo(orderNo);
+    }
+
     /**
      * 办理入住接口
      * 功能：为预订的客户办理入住手续，分配客房，登记入住信息

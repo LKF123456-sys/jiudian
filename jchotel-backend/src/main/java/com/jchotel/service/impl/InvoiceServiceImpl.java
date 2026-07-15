@@ -157,10 +157,18 @@ public class InvoiceServiceImpl extends ServiceImpl<InvoiceMapper, Invoice> impl
         invoice.setTaxNo(invoiceInfo.getTaxNo());
         // 设置开票金额
         invoice.setAmount(invoiceInfo.getAmount());
-        // 设置发票类型
-        invoice.setType(invoiceInfo.getType());
-        // 设置开票内容
-        invoice.setContent(invoiceInfo.getContent());
+        // 设置发票类型，默认增值税普通发票
+        if (invoiceInfo.getType() == null || invoiceInfo.getType().trim().isEmpty()) {
+            invoice.setType("增值税普通发票");
+        } else {
+            invoice.setType(invoiceInfo.getType());
+        }
+        // 设置开票内容，默认住宿费
+        if (invoiceInfo.getContent() == null || invoiceInfo.getContent().trim().isEmpty()) {
+            invoice.setContent("住宿费");
+        } else {
+            invoice.setContent(invoiceInfo.getContent());
+        }
         // 设置备注
         invoice.setRemark(invoiceInfo.getRemark());
         // 设置状态为已开具
