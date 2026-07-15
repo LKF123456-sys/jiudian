@@ -17,6 +17,7 @@ import com.jchotel.utils.Result; // 统一响应结果封装类
 // ========== Swagger/OpenAPI 文档注解导入 ==========
 import io.swagger.v3.oas.annotations.Operation; // API操作描述注解
 import io.swagger.v3.oas.annotations.tags.Tag; // API分组标签注解
+import io.swagger.v3.oas.annotations.security.SecurityRequirement; // 安全要求注解
 
 // ========== Spring框架相关导入 ==========
 import org.springframework.beans.factory.annotation.Autowired; // 自动注入注解
@@ -42,6 +43,7 @@ import java.util.Map; // 键值对映射类
 @RequestMapping("/api/orders") // 设置该控制器的基础请求路径
 @Validated // 启用类级别的参数校验
 @Tag(name = "订单管理") // Swagger文档分组标签
+@SecurityRequirement(name = "Bearer Authentication") // 需要Bearer Token认证
 public class OrderController {
 
     @Autowired // 自动注入订单服务
