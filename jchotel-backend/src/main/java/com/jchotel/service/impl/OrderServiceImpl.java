@@ -243,10 +243,18 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         return Result.success(order);
     }
 
+    /**
+     * 根据订单号查询订单
+     * @param orderNo 订单号
+     * @return 订单详细信息
+     */
     @Override
     public Result<Order> getByOrderNo(String orderNo) {
+        // 根据订单号查询订单
         Order order = baseMapper.findByOrderNo(orderNo);
+        // 订单不存在返回错误
         if (order == null) return Result.error("订单不存在");
+        // 返回订单信息
         return Result.success(order);
     }
 

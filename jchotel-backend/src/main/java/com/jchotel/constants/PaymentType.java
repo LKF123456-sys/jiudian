@@ -1,17 +1,42 @@
-package com.jchotel.constants; // 定义包名，constants包存放常量类
+package com.jchotel.constants;
 
 /**
  * 支付/交易类型常量类
- * 定义支付流水的交易类型，包括支付、退款、押金收付
+ * <p>
+ * 定义支付流水的交易类型，包括正常支付、退款、押金收付等不同场景。
+ * </p>
  *
- * @author 锦程酒店
+ * @author 锦程酒店开发团队
  * @since 1.0.0
  */
-public final class PaymentType { // final类，不可被继承
-    public static final String PAY = "pay"; // 消费支付：客房费、消费项目的正常支付
-    public static final String REFUND = "refund"; // 退款：订单取消、多收金额的退款
-    public static final String DEPOSIT = "deposit"; // 押金收取：入住时收取的押金
-    public static final String DEPOSIT_REFUND = "deposit_refund"; // 押金退还：退房时扣除消费后退还押金
+public final class PaymentType {
 
-    private PaymentType() {} // 私有构造方法，防止实例化
-} // 结束PaymentType类
+    /**
+     * 消费支付类型
+     * 客房房费、消费项目的正常支付
+     */
+    public static final String PAY = "pay";
+
+    /**
+     * 退款类型
+     * 订单取消、多收金额退还等场景的退款
+     */
+    public static final String REFUND = "refund";
+
+    /**
+     * 押金收取类型
+     * 客人入住时收取的住宿押金
+     */
+    public static final String DEPOSIT = "deposit";
+
+    /**
+     * 押金退还类型
+     * 客人退房时扣除消费后退还剩余押金
+     */
+    public static final String DEPOSIT_REFUND = "deposit_refund";
+
+    /**
+     * 私有构造方法，防止常量类被实例化
+     */
+    private PaymentType() {}
+}

@@ -1,47 +1,59 @@
-package com.jchotel; // 定义包名，根包
+package com.jchotel;
 
-// Spring Boot相关类
-import org.springframework.boot.SpringApplication; // Spring应用启动类
-import org.springframework.boot.autoconfigure.SpringBootApplication; // Spring Boot自动配置注解
-import org.springframework.boot.ApplicationRunner; // 应用运行器接口
-import org.springframework.context.annotation.Bean; // Bean注解
-import org.springframework.core.env.Environment; // 环境配置类
-import org.springframework.scheduling.annotation.EnableScheduling; // 启用定时任务注解
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.ApplicationRunner;
+import org.springframework.context.annotation.Bean;
+import org.springframework.core.env.Environment;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * 锦程酒店运营管理系统启动类
- * Spring Boot应用程序入口点
- * 启动内嵌的Tomcat服务器，初始化Spring容器
+ * <p>
+ * Spring Boot应用程序主入口点，负责启动内嵌的Tomcat服务器，
+ * 初始化Spring容器，并自动扫描加载所有Bean组件。
+ * </p>
  *
- * @author 锦程酒店
+ * @author 锦程酒店开发团队
  * @since 1.0.0
  */
-@SpringBootApplication // Spring Boot核心注解，包含@Configuration、@EnableAutoConfiguration、@ComponentScan
-@EnableScheduling // 启用Spring定时任务支持，使@Scheduled注解生效
+@SpringBootApplication
+@EnableScheduling
 public class JchotelApplication {
 
     /**
-     * 应用程序主入口
+     * 应用程序主入口方法
+     * <p>
+     * 启动Spring Boot应用，加载Spring容器，初始化所有配置和组件。
+     * </p>
      *
-     * @param args 命令行参数
+     * @param args 命令行启动参数
      */
     public static void main(String[] args) {
-        SpringApplication.run(JchotelApplication.class, args); // 启动Spring Boot应用
-    } // 结束main方法
+        SpringApplication.run(JchotelApplication.class, args);
+    }
 
     /**
-     * 应用启动完成后打印访问地址
+     * 应用启动成功后打印访问地址信息
+     * <p>
+     * 在Spring容器完全启动后，从环境配置中读取端口号和上下文路径，
+     * 在控制台打印系统各模块的访问地址和API文档地址，方便开发调试。
+     * </p>
      *
-     * @param env 环境配置对象
-     * @return ApplicationRunner
+     * @param env Spring环境配置对象，用于读取应用配置参数
+     * @return ApplicationRunner 应用启动完成后的执行器
      */
     @Bean
     public ApplicationRunner applicationRunner(Environment env) {
         return args -> {
+            // 从配置文件读取服务端口，默认8080
             String port = env.getProperty("server.port", "8080");
+            // 从配置文件读取上下文路径，默认为空
             String contextPath = env.getProperty("server.servlet.context-path", "");
+            // 拼接基础访问URL
             String baseUrl = "http://localhost:" + port + contextPath;
 
+            // 打印启动成功信息和各模块访问地址
             System.out.println("\n");
             System.out.println("========================================");
             System.out.println("  锦程酒店运营管理系统 启动成功！");
@@ -67,4 +79,4 @@ public class JchotelApplication {
             System.out.println("\n");
         };
     }
-} // 结束JchotelApplication类
+}

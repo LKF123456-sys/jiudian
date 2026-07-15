@@ -75,10 +75,17 @@ public class OrderController {
         return orderService.detail(id); // 调用服务层查询订单详情
     }
 
-    @Operation(summary = "按订单号查询订单")
-    @GetMapping("/no/{orderNo}")
-    public Result<Order> getByOrderNo(@PathVariable String orderNo) {
-        return orderService.getByOrderNo(orderNo);
+    /**
+     * 按订单号查询订单接口
+     * 功能：根据订单编号查询订单详情
+     * HTTP方法: GET /api/orders/no/{orderNo}
+     * @param orderNo 订单编号（PathVariable，路径参数）
+     * @return Result包含订单详情的Order对象
+     */
+    @Operation(summary = "按订单号查询订单") // Swagger接口摘要描述
+    @GetMapping("/no/{orderNo}") // 映射GET请求到/no/{orderNo}路径
+    public Result<Order> getByOrderNo(@PathVariable String orderNo) { // 从路径中获取订单编号
+        return orderService.getByOrderNo(orderNo); // 调用服务层按订单号查询订单
     }
 
     /**

@@ -1,30 +1,35 @@
-package com.jchotel.utils; // 定义包名，utils包存放工具类
+package com.jchotel.utils;
 
-// Spring工具类
-import org.springframework.util.DigestUtils; // MD5摘要工具类
+import org.springframework.util.DigestUtils;
 
 /**
- * MD5工具类
- * 提供MD5加密功能
- * 注意：MD5已不再安全，仅用于兼容历史数据，新代码请使用BCrypt
+ * MD5加密工具类
+ * <p>
+ * 提供MD5哈希加密功能。
+ * <strong>注意：MD5算法已被证明存在碰撞漏洞，不再安全，仅用于兼容历史数据，
+ * 新代码请使用{@link PasswordUtil}进行BCrypt密码加密。</strong>
+ * </p>
  *
- * @author 锦程酒店
+ * @author 锦程酒店开发团队
  * @since 1.0.0
- * @deprecated 建议使用PasswordUtil进行密码加密，BCrypt更安全
+ * @deprecated 建议使用PasswordUtil进行密码加密，BCrypt算法安全性更高
  */
+@Deprecated
 public class Md5Util {
 
     /**
      * MD5加密
-     * 将字符串进行MD5哈希，返回32位十六进制字符串
+     * <p>
+     * 将字符串进行MD5哈希计算，返回32位十六进制小写字符串。
+     * </p>
      *
-     * @param password 待加密的字符串
-     * @return MD5加密后的32位十六进制字符串，输入为null时返回null
+     * @param password 待加密的明文字符串
+     * @return String MD5加密后的32位十六进制字符串，输入为null时返回null
      */
     public static String encrypt(String password) {
-        if (password == null) { // 判断输入是否为null
-            return null; // null输入直接返回null
-        } // 结束null判断
-        return DigestUtils.md5DigestAsHex(password.getBytes()); // 将字符串转为字节数组后进行MD5哈希，返回十六进制字符串
-    } // 结束encrypt方法
-} // 结束Md5Util类
+        if (password == null) {
+            return null;
+        }
+        return DigestUtils.md5DigestAsHex(password.getBytes());
+    }
+}
